@@ -1,6 +1,6 @@
 ## Quadify Volumio 3 Plugin
 
-**Quadify** brings a complete hardware interface to Volumio 3, including advanced display, rotary encoder, MCP23017 button/LED, and IR remote support—all wrapped up in a single, easy-to-install plugin.
+**Quadify** brings a complete hardware interface to Volumio 3, including advanced display, rotary encoder, MCP23017 button/LED, and IR remote support — all wrapped up in a single, easy-to-install plugin.
 
 ---
 
@@ -9,48 +9,63 @@
 Quadify extends your Volumio system with:
 
 * **OLED/LCD Display Layer:** Now Playing info, menus, album art, screensavers, system status, and more.
-* **Rotary Encoder Support:** Volume, track navigation, menu scrolling, etc.
+* **Rotary Encoder Support:** Volume control, track navigation, menu scrolling, etc.
 * **MCP23017 Button/LED Matrix:** Full custom button and LED panel support via I²C expander.
 * **IR Remote:** Easily configure and use popular remotes with Volumio.
-* **Full integration:** Clean startup/shutdown, systemd services, UI configuration, all paths plugin-native.
+* **Full integration:** Clean startup/shutdown, systemd services, UI configuration, all plugin-native paths.
 
 ---
 
+### Installation
+
 1. **SSH into your Volumio device.**
-2. **Clone this repository** into the Volumio plugins directory:
+
+2. **Create the plugin directory (if it doesn't exist) and set ownership:**
+
+   ```bash
+   sudo mkdir -p /data/plugins/system_controller
+   sudo chown volumio:volumio /data/plugins/system_controller
+   ```
+
+3. **Clone the Quadify repository into the plugin directory:**
 
    ```bash
    cd /data/plugins/system_controller
    git clone https://github.com/theshepherdmatt/Quadify-Plugin.git quadify
    cd quadify
+   ```
+
+4. **Run the installer:**
 
    ```bash
-   cd /data/plugins/system_controller/quadify
    sudo ./install.sh
    ```
-4. Reboot if prompted.
-5. Configure options via the Volumio UI.
 
-Full install instructions and troubleshooting are [in the Wiki](https://github.com/theshepherdmatt/Quadify-Plugin/wiki).
+5. **Reboot your device if prompted.**
+
+6. **Configure options via the Volumio UI plugin settings page.**
+
+For detailed installation instructions and troubleshooting, please visit the [Quadify Wiki](https://github.com/theshepherdmatt/Quadify-Plugin/wiki).
 
 ---
 
 ### Compatibility
 
-* Designed for **Volumio 3.x** on Raspberry Pi and similar SBC hardware.
-* Not tested on Bookworm or earlier Buster-based Volumio builds.
-* Paths and services are plugin-relative (no `/home/volumio/Quadify` hardcoding).
+* Designed specifically for **Volumio 3.x** on Raspberry Pi and similar single-board computers.
+* Not tested on Volumio Bookworm or Buster-based builds.
+* All paths and services are plugin-relative, avoiding hardcoded `/home/volumio/Quadify` references.
 
 ---
 
 ### Documentation & Support
 
-* [Quadify Wiki](https://github.com/theshepherdmatt/Quadify-Plugin/wiki)
-* [Open an Issue](https://github.com/theshepherdmatt/Quadify-Plugin/issues) for help or suggestions.
+* Visit the [Quadify Wiki](https://github.com/theshepherdmatt/Quadify-Plugin/wiki) for documentation and FAQs.
+* Report issues or suggest features via the [GitHub Issues page](https://github.com/theshepherdmatt/Quadify-Plugin/issues).
 
 ---
 
 ### Credits
 
-Thanks to the Volumio community, plugin pioneers, and everyone providing feedback and support!
+Special thanks to the Volumio community, early plugin pioneers, and all users providing feedback and support!
 
+---
