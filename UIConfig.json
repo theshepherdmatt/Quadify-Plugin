@@ -1,150 +1,154 @@
 {
-    "page": {
-        "label": "Quadify Hardware Configuration"
-    },
-    "sections": [
+  "pages": [
+    {
+      "id": "main",
+      "label": "Quadify Hardware Configuration",
+      "icon": "fa-cogs",
+      "sections": [
         {
-            "id": "i2c_mcp",
-            "element": "section",
-            "label": "MCP23017 I2C Expander",
-            "icon": "fa-microchip",
-            "onSave": {
-                "type": "controller",
+          "id": "i2c_mcp",
+          "element": "section",
+          "label": "MCP23017 I2C Expander",
+          "icon": "fa-microchip",
+          "onSave": {
+            "type": "controller",
+            "endpoint": "system_controller/quadify",
+            "method": "updateMcpConfig"
+          },
+          "saveButton": {
+            "label": "Save",
+            "data": ["mcp23017_address"]
+          },
+          "content": [
+            {
+              "id": "mcp23017_address",
+              "element": "input",
+              "type": "text",
+              "label": "MCP23017 Address (Hex, e.g. 0x20)",
+              "value": ""
+            },
+            {
+              "id": "detect_mcp23017",
+              "element": "button",
+              "label": "Auto-detect MCP23017",
+              "doc": "Runs i2cdetect to find MCP23017 and updates config.yaml.",
+              "onClick": {
+                "type": "plugin",
                 "endpoint": "system_controller/quadify",
-                "method": "updateMcpConfig"
-            },
-            "saveButton": {
-                "label": "Save",
-                "data": ["mcp23017_address"]
-            },
-            "content": [
-                {
-                    "id": "mcp23017_address",
-                    "element": "input",
-                    "type": "text",
-                    "label": "MCP23017 Address (Hex, e.g. 0x20)",
-                    "value": ""
-                },
-                {
-                    "id": "detect_mcp23017",
-                    "element": "button",
-                    "label": "Auto-detect MCP23017",
-                    "doc": "Runs i2cdetect to find MCP23017 and updates config.yaml.",
-                    "onClick": {
-                        "type": "plugin",
-                        "endpoint": "system_controller/quadify",
-                        "method": "autoDetectMCP"
-                    }
-                }
-            ]
+                "method": "autoDetectMCP"
+              }
+            }
+          ]
         },
         {
-            "id": "rotary_encoder",
-            "element": "section",
-            "label": "Rotary Encoder",
-            "icon": "fa-refresh",
-            "onSave": {
-                "type": "controller",
-                "endpoint": "system_controller/quadify",
-                "method": "updateRotaryConfig"
+          "id": "rotary_encoder",
+          "element": "section",
+          "label": "Rotary Encoder",
+          "icon": "fa-refresh",
+          "onSave": {
+            "type": "controller",
+            "endpoint": "system_controller/quadify",
+            "method": "updateRotaryConfig"
+          },
+          "saveButton": {
+            "label": "Save",
+            "data": ["rotary_enabled", "clk_pin", "dt_pin", "sw_pin"]
+          },
+          "content": [
+            {
+              "id": "rotary_enabled",
+              "element": "switch",
+              "label": "Enable Rotary Encoder",
+              "value": false
             },
-            "saveButton": {
-                "label": "Save",
-                "data": ["rotary_enabled", "clk_pin", "dt_pin", "sw_pin"]
+            {
+              "id": "clk_pin",
+              "element": "input",
+              "type": "number",
+              "label": "CLK Pin (BCM/GPIO Number)",
+              "value": 13
             },
-            "content": [
-                {
-                    "id": "rotary_enabled",
-                    "element": "switch",
-                    "label": "Enable Rotary Encoder",
-                    "value": false
-                },
-                {
-                    "id": "clk_pin",
-                    "element": "input",
-                    "type": "number",
-                    "label": "CLK Pin (BCM/GPIO Number)",
-                    "value": 13
-                },
-                {
-                    "id": "dt_pin",
-                    "element": "input",
-                    "type": "number",
-                    "label": "DT Pin (BCM/GPIO Number)",
-                    "value": 5
-                },
-                {
-                    "id": "sw_pin",
-                    "element": "input",
-                    "type": "number",
-                    "label": "SW Pin (BCM/GPIO Number)",
-                    "value": 6
-                }
-            ]
+            {
+              "id": "dt_pin",
+              "element": "input",
+              "type": "number",
+              "label": "DT Pin (BCM/GPIO Number)",
+              "value": 5
+            },
+            {
+              "id": "sw_pin",
+              "element": "input",
+              "type": "number",
+              "label": "SW Pin (BCM/GPIO Number)",
+              "value": 6
+            }
+          ]
         },
         {
-            "id": "ir_remote",
-            "element": "section",
-            "label": "IR Remote",
-            "icon": "fa-remote",
-            "onSave": {
-                "type": "controller",
+          "id": "ir_remote",
+          "element": "section",
+          "label": "IR Remote",
+          "icon": "fa-remote",
+          "onSave": {
+            "type": "controller",
+            "endpoint": "system_controller/quadify",
+            "method": "updateIrConfig"
+          },
+          "saveButton": {
+            "label": "Save",
+            "data": ["ir_enabled", "ir_type", "ir_gpio"]
+          },
+          "content": [
+            {
+              "id": "ir_enabled",
+              "element": "switch",
+              "label": "Enable IR Remote",
+              "value": false
+            },
+            {
+              "id": "ir_type",
+              "element": "select",
+              "label": "Remote Type",
+              "options": [
+                { "label": "Quadify Default", "value": "default" },
+                { "label": "Apple A1156", "value": "apple_a1156" },
+                { "label": "Apple A1294", "value": "apple_a1294" },
+                { "label": "Denon", "value": "denon" },
+                { "label": "JustBoom", "value": "justboom" },
+                { "label": "Samsung", "value": "samsung" },
+                { "label": "Xbox 360", "value": "xbox360" },
+                { "label": "Other", "value": "other" }
+              ],
+              "value": "default"
+            },
+            {
+              "id": "ir_gpio",
+              "element": "select",
+              "label": "IR Receiver GPIO Pin",
+              "options": [
+                { "label": "GPIO 19", "value": 19 },
+                { "label": "GPIO 20", "value": 20 },
+                { "label": "GPIO 21", "value": 21 },
+                { "label": "GPIO 23", "value": 23 },
+                { "label": "GPIO 26 (Default)", "value": 26 },
+                { "label": "GPIO 27", "value": 27 }
+              ],
+              "value": 26
+            },
+            {
+              "id": "ir_autoconf",
+              "element": "button",
+              "label": "Auto-apply IR Config",
+              "doc": "Apply and test the selected IR remote configuration.",
+              "onClick": {
+                "type": "plugin",
                 "endpoint": "system_controller/quadify",
-                "method": "updateIrConfig"
-            },
-            "saveButton": {
-                "label": "Save",
-                "data": ["ir_enabled", "ir_type", "ir_gpio"]
-            },
-            "content": [
-                {
-                    "id": "ir_enabled",
-                    "element": "switch",
-                    "label": "Enable IR Remote",
-                    "value": false
-                },
-                {
-                    "id": "ir_type",
-                    "element": "select",
-                    "label": "Remote Type",
-                    "options": [
-                        { "label": "Quadify Default", "value": "default" },
-                        { "label": "Apple A1156", "value": "apple_a1156" },
-                        { "label": "Apple A1294", "value": "apple_a1294" },
-                        { "label": "Denon", "value": "denon" },
-                        { "label": "JustBoom", "value": "justboom" },
-                        { "label": "Samsung", "value": "samsung" },
-                        { "label": "Xbox 360", "value": "xbox360" },
-                        { "label": "Other", "value": "other" }
-                    ],
-                    "value": "default"
-                },
-                {
-                    "id": "ir_gpio",
-                    "element": "select",
-                    "label": "IR Receiver GPIO Pin",
-                    "options": [
-                        { "label": "GPIO 19", "value": 19 },
-                        { "label": "GPIO 20", "value": 20 },
-                        { "label": "GPIO 21", "value": 21 },
-                        { "label": "GPIO 23", "value": 23 },
-                        { "label": "GPIO 26 (Default)", "value": 26 },
-                        { "label": "GPIO 27", "value": 27 }
-                    ],
-                    "value": 26
-                },
-                {
-                    "id": "ir_autoconf",
-                    "element": "button",
-                    "label": "Auto-apply IR Config",
-                    "doc": "Apply and test the selected IR remote configuration.",
-                    "onClick": {
-                        "type": "plugin",
-                        "endpoint": "system_controller/quadify",
-                        "method": "applyIrConfig"
-                    }
-                }
-            ]
+                "method": "applyIrConfig"
+              }
+            }
+          ]
         }
-    ]
+      ]
+    }
+  ]
 }
