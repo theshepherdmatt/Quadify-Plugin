@@ -8,5 +8,5 @@
   "icon": "fa-cogs",
   "isManuallyInstalled": true,
   "volumio_version": ">=3.0.0",
-  "dependencies": []
+  "node": ">=10"
 }
