@@ -1,117 +1,147 @@
 {
     "page": {
-        "label": "Evo Sabre configuration"
+        "label": "Quadify Hardware Configuration"
     },
     "sections": [
-		{
-            "id": "documentation",
+        {
+            "id": "i2c_mcp",
             "element": "section",
-            "label": "Doc",
-            "icon": "fa-book-o",
-            "content": [{
-                    "id": "evo_help",
-                    "element": "button",
-                    "label": "TRANSLATE.UI.OPEN_PLUGDOC",
-                    "doc": "TRANSLATE.UI.OPEN_PLUGDOC_DOC",
-                    "onClick": {
-                        "type": "plugin",
-                        "endpoint": "system_hardware/audiophonics_evo_sabre",
-                        "method": "getPluginDoc"
-                    }
-			}]
-        },
-		{
-            "id": "oled2_display",
-            "element": "section",
-            "label": "OLED #2 configuration",
-            "icon": "fa-television",
+            "label": "MCP23017 I2C Expander",
+            "icon": "fa-microchip",
             "onSave": {
                 "type": "controller",
-                "endpoint": "system_hardware/audiophonics_evo_sabre",
-                "method": "updateOledConfig"
+                "endpoint": "system_controller/quadify",
+                "method": "updateMcpConfig"
             },
             "saveButton": {
                 "label": "Save",
-                "data": [
-                    "oled_active",
-                    "contrast",
-                    "sleep_after",
-                    "deep_sleep_after"
-                ]
+                "data": ["mcp23017_address"]
             },
-            "content": [{
-                    "id": "oled_active",
-                    "element": "switch",
-                    "label": "TRANSLATE.UI.OLED_ENABLE",
-                    "doc": "TRANSLATE.UI.OLED_ENABLE_DOC",
-                    "value": true
-                }, {
-                    "id": "contrast",
-                    "type": "number",
+            "content": [
+                {
+                    "id": "mcp23017_address",
                     "element": "input",
-                    "doc": "TRANSLATE.UI.OLED_CONTRAST_DOC",
-                    "label": "TRANSLATE.UI.OLED_CONTRAST_LABEL",
+                    "type": "text",
+                    "label": "MCP23017 Address (Hex, e.g. 0x20)",
                     "value": ""
-                }, {
-                    "id": "sleep_after",
-                    "type": "number",
-                    "element": "input",
-                    "doc": "TRANSLATE.UI.OLED_SCREENSAVER_DOC",
-                    "label": "TRANSLATE.UI.OLED_SCREENSAVER_LABEL",
-                    "value": ""
-                }, {
-                    "id": "deep_sleep_after",
-                    "type": "number",
-                    "element": "input",
-                    "doc": "TRANSLATE.UI.OLED_DEEPSLEEP_DOC",
-                    "label": "TRANSLATE.UI.OLED_DEEPSLEEP_LABEL",
-                    "value": ""
-                }, {
-                    "id": "restart_oled2",
+                },
+                {
+                    "id": "detect_mcp23017",
                     "element": "button",
-                    "label": "TRANSLATE.UI.OLED_RESTART_LABEL",
-                    "doc": "TRANSLATE.UI.OLED_RESTART_DOC",
+                    "label": "Auto-detect MCP23017",
+                    "doc": "Runs i2cdetect to find MCP23017 and updates config.yaml.",
                     "onClick": {
-                        "type": "emit",
-                        "message": "callMethod",
-                        "data": {
-                            "endpoint": "system_hardware/audiophonics_evo_sabre",
-                            "method": "restartOled",
-                            "data": ""
-                        }
+                        "type": "plugin",
+                        "endpoint": "system_controller/quadify",
+                        "method": "autoDetectMCP"
                     }
                 }
             ]
-        }, 
-		{
-            "id": "remote",
+        },
+        {
+            "id": "rotary_encoder",
             "element": "section",
-            "label": "Remote",
-            "icon": "fa-lightbulb-o",
+            "label": "Rotary Encoder",
+            "icon": "fa-refresh",
             "onSave": {
                 "type": "controller",
-                "endpoint": "system_hardware/audiophonics_evo_sabre",
-                "method": "updateRemoteConfig"
+                "endpoint": "system_controller/quadify",
+                "method": "updateRotaryConfig"
             },
             "saveButton": {
                 "label": "Save",
-                "data": ["remote_active"]
+                "data": ["rotary_enabled", "clk_pin", "dt_pin", "sw_pin"]
             },
-            "content": [{
-                    "id": "remote_active",
+            "content": [
+                {
+                    "id": "rotary_enabled",
                     "element": "switch",
-                    "label": "TRANSLATE.UI.REMOTE_ENABLE",
-                    "doc": "TRANSLATE.UI.REMOTE_ENABLE_DOC",
-                    "value": true
-                }, {
-                    "id": "diagnose_remote",
+                    "label": "Enable Rotary Encoder",
+                    "value": false
+                },
+                {
+                    "id": "clk_pin",
+                    "element": "input",
+                    "type": "number",
+                    "label": "CLK Pin (BCM/GPIO Number)",
+                    "value": 13
+                },
+                {
+                    "id": "dt_pin",
+                    "element": "input",
+                    "type": "number",
+                    "label": "DT Pin (BCM/GPIO Number)",
+                    "value": 5
+                },
+                {
+                    "id": "sw_pin",
+                    "element": "input",
+                    "type": "number",
+                    "label": "SW Pin (BCM/GPIO Number)",
+                    "value": 6
+                }
+            ]
+        },
+        {
+            "id": "ir_remote",
+            "element": "section",
+            "label": "IR Remote",
+            "icon": "fa-remote",
+            "onSave": {
+                "type": "controller",
+                "endpoint": "system_controller/quadify",
+                "method": "updateIrConfig"
+            },
+            "saveButton": {
+                "label": "Save",
+                "data": ["ir_enabled", "ir_type", "ir_gpio"]
+            },
+            "content": [
+                {
+                    "id": "ir_enabled",
+                    "element": "switch",
+                    "label": "Enable IR Remote",
+                    "value": false
+                },
+                {
+                    "id": "ir_type",
+                    "element": "select",
+                    "label": "Remote Type",
+                    "options": [
+                        { "label": "Quadify Default", "value": "default" },
+                        { "label": "Apple A1156", "value": "apple_a1156" },
+                        { "label": "Apple A1294", "value": "apple_a1294" },
+                        { "label": "Denon", "value": "denon" },
+                        { "label": "JustBoom", "value": "justboom" },
+                        { "label": "Samsung", "value": "samsung" },
+                        { "label": "Xbox 360", "value": "xbox360" },
+                        { "label": "Other", "value": "other" }
+                    ],
+                    "value": "default"
+                },
+                {
+                    "id": "ir_gpio",
+                    "element": "select",
+                    "label": "IR Receiver GPIO Pin",
+                    "options": [
+                        { "label": "GPIO 19", "value": 19 },
+                        { "label": "GPIO 20", "value": 20 },
+                        { "label": "GPIO 21", "value": 21 },
+                        { "label": "GPIO 23", "value": 23 },
+                        { "label": "GPIO 26 (Default)", "value": 26 },
+                        { "label": "GPIO 27", "value": 27 }
+                    ],
+                    "value": 26
+                },
+                {
+                    "id": "ir_autoconf",
                     "element": "button",
-                    "label": "TRANSLATE.UI.REMOTE_DIAGNOSE",
-                    "doc": "TRANSLATE.UI.REMOTE_DIAGNOSE_DOC",
+                    "label": "Auto-apply IR Config",
+                    "doc": "Apply and test the selected IR remote configuration.",
                     "onClick": {
                         "type": "plugin",
-                        "endpoint": "system_hardware/audiophonics_evo_sabre",
-                        "method": "diagnoseRemote"
+                        "endpoint": "system_controller/quadify",
+                        "method": "applyIrConfig"
                     }
                 }
             ]
