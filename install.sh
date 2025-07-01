@@ -32,7 +32,6 @@ python3 -m pip install --upgrade setuptools importlib-metadata
 log "Installing Python dependencies from requirements.txt..."
 python3 -m pip install --upgrade --ignore-installed -r ./quadify/requirements.txt
 
-# ---- Usual plugin install steps ----
 log "Enabling I2C/SPI in /boot/userconfig.txt..."
 CONFIG_FILE="/boot/userconfig.txt"
 touch "$CONFIG_FILE"
@@ -41,12 +40,24 @@ grep -qxF 'dtparam=i2c_arm=on' "$CONFIG_FILE" || echo 'dtparam=i2c_arm=on' >> "$
 modprobe i2c-dev || true
 modprobe spi-bcm2835 || true
 
+# ---- Check for /dev/spidev0.0 and warn if reboot is needed ----
+if [ ! -e /dev/spidev0.0 ]; then
+  log "SPI is not enabled yet! You must REBOOT before the Quadify service will work."
+  START_SERVICE=0
+else
+  START_SERVICE=1
+fi
+
 log "Setting up systemd service for Quadify..."
 if [ -f quadify/service/quadify.service ]; then
   cp quadify/service/quadify.service /etc/systemd/system/quadify.service
   systemctl daemon-reload
   systemctl enable quadify.service
-  systemctl restart quadify.service
+  if [ "$START_SERVICE" -eq 1 ]; then
+    systemctl restart quadify.service
+  else
+    log "Not starting Quadify service yet (SPI not enabled). Please reboot!"
+  fi
 else
   log "No quadify/service/quadify.service found! Skipping systemd setup."
 fi
