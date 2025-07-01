@@ -8,6 +8,6 @@
   "icon": "fa-cogs",
   "isManuallyInstalled": true,
   "volumio_version": ">=3.0.0",
-  "node": ">=14"
+  "node": ">=14",
   "uninstall_script": "uninstall.js"
 }
