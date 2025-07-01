@@ -1,46 +1,54 @@
-You are currently on the **Volumio BOOKWORM** version of this plugin. 
-<br>
-If you need to use this repository before mid-2025, you may be looking for the [Volumio BUSTER](https://github.com/audiophonics/volumio-plugins-sources) version instead.
-<br>
-To clafiry the version you are currently using, run ```lsb_release -a``` into a SSH session and confirm whether your Pi is running Buster or Bookworm. 
+## Quadify Volumio 3 Plugin
 
-<hr>
+**Quadify** brings a complete hardware interface to Volumio 3, including advanced display, rotary encoder, MCP23017 button/LED, and IR remote support—all wrapped up in a single, easy-to-install plugin.
 
+---
 
-## Evo Sabre as a Volumio 3 Plugin VERSION 2.
+### What is Quadify?
 
-This plugin has two main purposes : 
-* Installing the EVO-Sabre secondary OLED display (rightmost display) to work with Volumio playback system.
-* It also installs and configures the remote control receiver to work alongside Volumio playback control.
+Quadify extends your Volumio system with:
 
-### Installation 
-A step-by-step installation guide on this page [is available here](https://www.audiophonics.fr/en/blog-diy-audio/40-new-installation-system-for-evo-sabre-under-volumio-plugin.html).
+* **OLED/LCD Display Layer:** Now Playing info, menus, album art, screensavers, system status, and more.
+* **Rotary Encoder Support:** Volume, track navigation, menu scrolling, etc.
+* **MCP23017 Button/LED Matrix:** Full custom button and LED panel support via I²C expander.
+* **IR Remote:** Easily configure and use popular remotes with Volumio.
+* **Full integration:** Clean startup/shutdown, systemd services, UI configuration, all paths plugin-native.
 
+---
 
-### Display Layer : 
+### Installation
 
-The Oled#2 layer is a separate nodejs application launched when the plugin starts. The run command is exposed as a service (evo_oled2.service) and triggered with systemctl.  
-  
-It uses websocket to address the [Volumio Websocket API](https://volumio.github.io/docs/API/WebSocket_APIs.html) and fetch the streamer inner state.  
-  
-It also uses a micro http server to listen to many events as a way to detect activity (mainly to automatically exit sleep mode when the remote is used).  
-  
-The SPI driver is no longer handled with [RPIO](https://www.npmjs.com/package/rpio), but now uses [spi-device](https://github.com/fivdi/spi-device) to align with Volumio need to support newer versions of Raspberry Pi 5 and kernel-agnostic GPIO addressing. 
-This change means the installer has to write in ```/boot/userconfig.txt``` to enable hardware spi device. Because of this, the display now also needs a reboot after the first install.
-    
-### Remote Layer :
+1. **SSH into your Volumio device.**
+2. Clone this repository or install via the Volumio plugin system.
+3. Run the installer from the plugin directory:
 
-The remote layer uses the regular LIRC & IREXEC to translate IR inputs as system calls. Both processes are bound in separate services with arbitrary names (evo_remote.service & evo_irexec.service) to avoid collision with other plugins using a remote.
-  
-During plugin installation, the installer writes in ```/boot/userconfig.txt``` to expose the gpio-ir device tree with the correct pin-out. Because of this, a reboot is required after a first install to have remote is 100% working.
-	
- ## Translation & documentation
- The plugin settings page provides some documentation and tips to help the user configuring Volumio for a Evo Sabre (mainly audio output selection). All is available in French and English. Anyone willing to help with other languages is more than welcome.
- 
-   
-   
- ## Credits 
-Many thanks to Nerd, Gé & Balbuze for pointing me to the right documentation and providing me with precious advice while I was writing and updating this plugin.
-Also a special thank you to Jens Neugebauer for thoroughly testing the plugin and helping me gaining enough confidence to port this whole set of software as a plugin.
-Thanks to the many Evo Sabre user that were patient enough to provide feedback for the first beta version.
- 
+   ```bash
+   cd /data/plugins/system_controller/quadify
+   sudo ./install.sh
+   ```
+4. Reboot if prompted.
+5. Configure options via the Volumio UI.
+
+Full install instructions and troubleshooting are [in the Wiki](https://github.com/theshepherdmatt/Quadify-Plugin/wiki).
+
+---
+
+### Compatibility
+
+* Designed for **Volumio 3.x** on Raspberry Pi and similar SBC hardware.
+* Not tested on Bookworm or earlier Buster-based Volumio builds.
+* Paths and services are plugin-relative (no `/home/volumio/Quadify` hardcoding).
+
+---
+
+### Documentation & Support
+
+* [Quadify Wiki](https://github.com/theshepherdmatt/Quadify-Plugin/wiki)
+* [Open an Issue](https://github.com/theshepherdmatt/Quadify-Plugin/issues) for help or suggestions.
+
+---
+
+### Credits
+
+Thanks to the Volumio community, plugin pioneers, and everyone providing feedback and support!
+
