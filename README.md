@@ -55,7 +55,7 @@ cd quadify
 Make sure the install script is executable and run it:
 
 ```bash
-chmod +x ./install.sh
+sudo chmod +x ./install.sh
 sudo /data/plugins/system_controller/quadify/install.sh
 ```
 
