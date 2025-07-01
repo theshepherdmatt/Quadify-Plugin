@@ -1,49 +1,59 @@
 'use strict';
 const libQ = require('kew');
-const { spawn } = require('child_process');
-const path = require('path');
+const { exec } = require('child_process');
 
 module.exports = QuadifyPlugin;
-
 function QuadifyPlugin(context) {
   this.context = context;
   this.commandRouter = context.coreCommand;
-  this.configManager = context.configManager;
-  this.pythonProcess = null;
 }
 
-QuadifyPlugin.prototype.onStart = function () {
+QuadifyPlugin.prototype.onVolumioStart = function() {
+  return this.commandRouter.loadUiConfig();
+};
+
+QuadifyPlugin.prototype.onStart = function() {
   const defer = libQ.defer();
+  this.commandRouter.logger.info('Starting Quadify Plugin…');
 
-  const python = '/usr/bin/python3';
-  const script = path.join(__dirname, 'quadify', 'src', 'main.py');
+  exec('systemctl start quadify.service', (err, stdout, stderr) => {
+    if (err) {
+      this.commandRouter.logger.error(`Error starting quadify.service: ${stderr}`);
+      defer.reject(err);
+    } else {
+      this.commandRouter.logger.info('quadify.service started');
+      defer.resolve();
+    }
+  });
 
-  this.pythonProcess = spawn(python, [script]);
-
-  this.pythonProcess.stdout.on('data', data =>
-    this.commandRouter.logger.info('[Quadify Plugin] ' + data.toString())
-  );
-
-  this.pythonProcess.stderr.on('data', data =>
-    this.commandRouter.logger.error('[Quadify Plugin ERROR] ' + data.toString())
-  );
-
-  this.pythonProcess.on('exit', code =>
-    this.commandRouter.logger.info('[Quadify Plugin] Python process exited with code ' + code)
-  );
-
-  defer.resolve();
   return defer.promise;
 };
 
-QuadifyPlugin.prototype.onStop = function () {
+QuadifyPlugin.prototype.onStop = function() {
   const defer = libQ.defer();
+  this.commandRouter.logger.info('Stopping Quadify Plugin…');
 
-  if (this.pythonProcess) {
-    this.pythonProcess.kill();
-    this.commandRouter.logger.info('[Quadify Plugin] Python process killed');
-  }
+  exec('systemctl stop quadify.service', (err, stdout, stderr) => {
+    if (err) {
+      this.commandRouter.logger.error(`Error stopping quadify.service: ${stderr}`);
+      defer.reject(err);
+    } else {
+      this.commandRouter.logger.info('quadify.service stopped');
+      defer.resolve();
+    }
+  });
 
-  defer.resolve();
   return defer.promise;
 };
+
+QuadifyPlugin.prototype.getUIConfig = function() {
+  const defer = libQ.defer();
+  this.commandRouter.i18nJson(__dirname, 'i18n/strings.json',
+    (err, uiConfig) => err ? defer.reject(err) : defer.resolve(uiConfig)
+  );
+  return defer.promise;
+};
+
+// No config save needed for now
+QuadifyPlugin.prototype.onRestart = function() { return this.onStop().then(() => this.onStart()); };
+
