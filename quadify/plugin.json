@@ -1,6 +1,6 @@
 {
   "id": "quadify",
-  "name": "Quadify Plugin",
+  "name": "quadify",
   "description": "Integrates the Quadify Python interface with Volumio.",
   "author": "Matt Shepherd",
   "version": "1.0.0",
