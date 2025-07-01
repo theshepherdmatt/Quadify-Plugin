@@ -1,3 +1,6 @@
+Here’s the updated README section with your install troubleshooting note added:
+
+````markdown
 ## Quadify Volumio 3 Plugin
 
 **Quadify** brings a complete hardware interface to Volumio 3, including advanced display, rotary encoder, MCP23017 button/LED, and IR remote support — all wrapped up in a single, easy-to-install plugin.
@@ -25,7 +28,7 @@ Quadify extends your Volumio system with:
    ```bash
    sudo mkdir -p /data/plugins/system_controller
    sudo chown volumio:volumio /data/plugins/system_controller
-   ```
+````
 
 3. **Clone the Quadify repository into the plugin directory:**
 
@@ -38,8 +41,14 @@ Quadify extends your Volumio system with:
 4. **Run the installer:**
 
    ```bash
-   sudo ./install.sh
+   # Ensure the install script is executable
+   chmod +x ./install.sh
+
+   # Run the install script with full path to avoid "command not found" issues
+   sudo /data/plugins/system_controller/quadify/install.sh
    ```
+
+   > **Note:** If you get a `command not found` error running `sudo ./install.sh`, try running it with the full path as shown above.
 
 5. **Reboot your device if prompted.**
 
