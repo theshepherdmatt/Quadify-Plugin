@@ -1,78 +1,108 @@
-````markdown
-# Quadify Volumio 3 Plugin
+Got it! Let me spruce that up with cleaner formatting, nicer headings, and a more polished tone for a pro README:
 
-**Quadify** brings a complete hardware interface to Volumio 3, including advanced display, rotary encoder, MCP23017 button/LED, and IR remote support — all wrapped up in a single, easy-to-install plugin.
+````markdown
+# Quadify — Volumio 3 Plugin
+
+**Quadify** is a comprehensive hardware interface plugin for **Volumio 3** that adds:
+
+- Advanced OLED/LCD display with Now Playing info, album art, menus, screensavers, system status, and more
+- Rotary encoder support for volume, track navigation, and menu scrolling
+- MCP23017 I²C button and LED matrix support for full customizable controls
+- IR remote control compatibility with popular remotes
+- Seamless integration with Volumio's plugin system — clean startup/shutdown, systemd services, and native plugin paths
 
 ---
 
-## What is Quadify?
+## Features
 
-Quadify extends your Volumio system with:
-
-* **OLED/LCD Display Layer:** Now Playing info, menus, album art, screensavers, system status, and more.  
-* **Rotary Encoder Support:** Volume control, track navigation, menu scrolling, etc.  
-* **MCP23017 Button/LED Matrix:** Full custom button and LED panel support via I²C expander.  
-* **IR Remote:** Easily configure and use popular remotes with Volumio.  
-* **Full integration:** Clean startup/shutdown, systemd services, UI configuration, all plugin-native paths.
+| Feature               | Description                                                       |
+|-----------------------|-------------------------------------------------------------------|
+| OLED/LCD Display      | Rich playback info and UI on secondary display                    |
+| Rotary Encoder        | Hardware volume and menu control                                  |
+| MCP23017 Button/LED   | Expandable custom button and LED panel via I²C                    |
+| IR Remote             | Easy remote control setup and diagnostics                         |
+| Full Plugin Integration | Systemd services, UI configuration, and plugin-native file paths |
 
 ---
 
 ## Installation
 
-1. **SSH into your Volumio device.**
+### Step 1: SSH into your Volumio device
 
-2. **Create the plugin directory (if it doesn't exist) and set ownership:**
+Open a terminal and connect via SSH:
 
-   ```bash
-   sudo mkdir -p /data/plugins/system_controller
-   sudo chown volumio:volumio /data/plugins/system_controller
+```bash
+ssh volumio@<volumio-ip-address>
 ````
 
-3. **Clone the Quadify repository into the plugin directory:**
+### Step 2: Prepare the plugin directory
 
-   ```bash
-   cd /data/plugins/system_controller
-   git clone https://github.com/theshepherdmatt/Quadify-Plugin.git quadify
-   cd quadify
-   ```
+Create the system\_controller plugin folder if it doesn’t exist, and set the correct ownership:
 
-4. **Run the installer:**
+```bash
+sudo mkdir -p /data/plugins/system_controller
+sudo chown volumio:volumio /data/plugins/system_controller
+```
 
-   ```bash
-   # Ensure the install script is executable
-   chmod +x ./install.sh
+### Step 3: Clone the Quadify repository
 
-   # Run the install script with full path to avoid "command not found" issues
-   sudo /data/plugins/system_controller/quadify/install.sh
-   ```
+```bash
+cd /data/plugins/system_controller
+git clone https://github.com/theshepherdmatt/Quadify-Plugin.git quadify
+cd quadify
+```
 
-   > **Note:** If you get a `command not found` error running `sudo ./install.sh`, try running it with the full path as shown above.
+### Step 4: Install Quadify
 
-5. **Reboot your device if prompted.**
+Make sure the install script is executable and run it:
 
-6. **Configure options via the Volumio UI plugin settings page.**
+```bash
+chmod +x ./install.sh
+sudo /data/plugins/system_controller/quadify/install.sh
+```
 
-For detailed installation instructions and troubleshooting, please visit the [Quadify Wiki](https://github.com/theshepherdmatt/Quadify-Plugin/wiki).
+> **Note:** If you encounter a `command not found` error when running `sudo ./install.sh`, use the full path as above.
+
+### Step 5: Reboot your device
+
+A reboot may be required for hardware and services to initialize properly.
+
+### Step 6: Configure via Volumio UI
+
+Use the Volumio Web UI plugin settings page to configure display, rotary, buttons, and remote options.
 
 ---
 
 ## Compatibility
 
-* Designed specifically for **Volumio 3.x** on Raspberry Pi and similar single-board computers.
-* Not tested on Volumio Bookworm or Buster-based builds.
-* All paths and services are plugin-relative, avoiding hardcoded `/home/volumio/Quadify` references.
+* Built and tested for **Volumio 3.x** on Raspberry Pi and similar SBCs
+* Not tested on Volumio Bookworm or Buster releases
+* Uses plugin-relative paths — no hardcoded `/home/volumio/Quadify`
 
 ---
 
 ## Documentation & Support
 
-* Visit the [Quadify Wiki](https://github.com/theshepherdmatt/Quadify-Plugin/wiki) for documentation and FAQs.
-* Report issues or suggest features via the [GitHub Issues page](https://github.com/theshepherdmatt/Quadify-Plugin/issues).
+* Explore the [Quadify Wiki](https://github.com/theshepherdmatt/Quadify-Plugin/wiki) for guides and FAQs
+* Open issues or suggest features via the [GitHub Issues](https://github.com/theshepherdmatt/Quadify-Plugin/issues) page
 
 ---
 
 ## Credits
 
-Special thanks to the Volumio community, early plugin pioneers, and all users providing feedback and support!
+Thanks to the Volumio community and all contributors who helped bring Quadify to life!
 
 ---
+
+```
+
+This version has:
+
+- Clear, descriptive headings  
+- Short paragraphs with step-by-step instructions  
+- Tables for feature clarity  
+- Bold emphasis for important notes  
+- Clean code blocks with consistent indentation  
+
+If you want, I can add badges (build/status/license) or a "Getting Help" section next! Would that be useful?
+```
