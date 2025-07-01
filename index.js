@@ -1,112 +1,149 @@
 'use strict';
+
+const libQ = require('kew');
 const fs = require('fs');
 const path = require('path');
-const exec = require('child_process').exec;
 const yaml = require('js-yaml');
+const exec = require('child_process').exec;
 
-const PLUGIN_PATH = __dirname;
-const CONFIG_YAML = path.join(PLUGIN_PATH, 'quadify', 'config.yaml');
+module.exports = ControllerQuadify;
 
-module.exports = function (context) {
-    const self = this;
+function ControllerQuadify(context) {
+    this.context = context;
+    this.commandRouter = context.coreCommand;
+    this.logger = this.commandRouter.logger;
+    this.configManager = this.context.configManager;
 
-    // Load YAML config
-    self.loadConfig = function() {
-        try {
-            const doc = yaml.load(fs.readFileSync(CONFIG_YAML, 'utf8'));
-            return doc;
-        } catch (e) {
-            self.log('warn', 'Config not found, using default');
-            return {};
-        }
-    };
+    this.pluginPath = __dirname;
+    this.configYamlPath = path.join(this.pluginPath, 'quadify', 'config.yaml');
+}
 
-    // Save YAML config
-    self.saveConfig = function(config) {
-        fs.writeFileSync(CONFIG_YAML, yaml.dump(config), 'utf8');
-    };
+// --- Plugin Lifecycle Methods ---
 
-    // Logger
-    self.log = function(level, msg) {
-        console.log(`[QuadifyPlugin][${level}] ${msg}`);
-    };
+ControllerQuadify.prototype.onVolumioStart = function () {
+    this.logger.info('[QuadifyPlugin] onVolumioStart');
+    // Load config or perform other startup actions here
+    return libQ.resolve();
+};
 
-    // Exposed plugin methods
-    self.onStart = function() {
-        self.log('info', 'Quadify plugin started');
-        // Start your Python backend here if needed, eg spawn child process
-    };
+ControllerQuadify.prototype.onStart = function () {
+    this.logger.info('[QuadifyPlugin] onStart');
+    // You could start your Python process here if you want to tie it to plugin enable
+    return libQ.resolve();
+};
 
-    self.onStop = function() {
-        self.log('info', 'Quadify plugin stopped');
-        // Stop any child process if needed
-    };
+ControllerQuadify.prototype.onStop = function () {
+    this.logger.info('[QuadifyPlugin] onStop');
+    // Cleanup, stop any Python processes, etc.
+    return libQ.resolve();
+};
 
-    // UIConfig load
-    self.getUIConfig = function (callback) {
-        const lang_code = 'en';
-        fs.readFile(path.join(__dirname, 'UIConfig.json'), 'utf8', (err, data) => {
-            if (err) return callback(err);
-            callback(null, JSON.parse(data));
-        });
-    };
+ControllerQuadify.prototype.onRestart = function () {
+    this.logger.info('[QuadifyPlugin] onRestart');
+    // Actions before Volumio restarts
+};
 
-    // MCP23017 auto-detect
-    self.autoDetectMCP = function (data, callback) {
-        exec('i2cdetect -y 1', (error, stdout) => {
-            if (error) {
-                callback({ success: false, error: error.toString() });
+ControllerQuadify.prototype.onInstall = function () {
+    this.logger.info('[QuadifyPlugin] onInstall');
+    // Actions after plugin install
+};
+
+ControllerQuadify.prototype.onUninstall = function () {
+    this.logger.info('[QuadifyPlugin] onUninstall');
+    // Cleanup when plugin is uninstalled
+};
+
+// --- UIConfig Methods ---
+
+ControllerQuadify.prototype.getUIConfig = function () {
+    const defer = libQ.defer();
+    const lang_code = this.commandRouter.sharedVars.get('language_code') || 'en';
+
+    this.commandRouter.i18nJson(
+        path.join(__dirname, '/i18n/strings_' + lang_code + '.json'),
+        path.join(__dirname, '/i18n/strings_en.json'),
+        path.join(__dirname, '/UIConfig.json')
+    ).then((uiconf) => {
+        // You could inject dynamic config here if desired
+        defer.resolve(uiconf);
+    }).fail((e) => {
+        this.logger.error('[QuadifyPlugin] getUIConfig error: ' + e);
+        defer.reject(new Error());
+    });
+
+    return defer.promise;
+};
+
+// --- Config Loader/Saver ---
+
+ControllerQuadify.prototype.loadConfig = function () {
+    try {
+        const doc = yaml.load(fs.readFileSync(this.configYamlPath, 'utf8'));
+        return doc || {};
+    } catch (e) {
+        this.logger.warn('[QuadifyPlugin] Config not found, using default');
+        return {};
+    }
+};
+
+ControllerQuadify.prototype.saveConfig = function (config) {
+    fs.writeFileSync(this.configYamlPath, yaml.dump(config), 'utf8');
+};
+
+// --- API Endpoints for UI buttons ---
+
+ControllerQuadify.prototype.updateMcpConfig = function (data, callback) {
+    let config = this.loadConfig();
+    if (data.mcp23017_address) config.mcp23017_address = data.mcp23017_address;
+    this.saveConfig(config);
+    callback({ success: true });
+};
+
+ControllerQuadify.prototype.autoDetectMCP = function (data, callback) {
+    exec('i2cdetect -y 1', (error, stdout) => {
+        if (error) {
+            callback({ success: false, error: error.toString() });
+        } else {
+            const match = stdout.match(/\b2[0-7]\b/);
+            if (match) {
+                const address = `0x${match[0]}`;
+                let config = this.loadConfig();
+                config.mcp23017_address = address;
+                this.saveConfig(config);
+                callback({ success: true, address });
             } else {
-                // Look for address like "20", "21", etc in the output
-                const match = stdout.match(/\b2[0-7]\b/);
-                if (match) {
-                    const address = `0x${match[0]}`;
-                    let config = self.loadConfig();
-                    config.mcp23017_address = address;
-                    self.saveConfig(config);
-                    callback({ success: true, address });
-                } else {
-                    callback({ success: false, error: 'No MCP23017 found' });
-                }
+                callback({ success: false, error: 'No MCP23017 found' });
             }
-        });
-    };
+        }
+    });
+};
 
-    // Rotary config save
-    self.updateRotaryConfig = function (data, callback) {
-        let config = self.loadConfig();
-        config.pins = config.pins || {};
-        config.pins.clk_pin = parseInt(data.clk_pin) || 13;
-        config.pins.dt_pin = parseInt(data.dt_pin) || 5;
-        config.pins.sw_pin = parseInt(data.sw_pin) || 6;
-        config.rotary_enabled = !!data.rotary_enabled;
-        self.saveConfig(config);
-        callback({ success: true });
-    };
+ControllerQuadify.prototype.updateRotaryConfig = function (data, callback) {
+    let config = this.loadConfig();
+    config.pins = config.pins || {};
+    config.pins.clk_pin = parseInt(data.clk_pin) || 13;
+    config.pins.dt_pin = parseInt(data.dt_pin) || 5;
+    config.pins.sw_pin = parseInt(data.sw_pin) || 6;
+    config.rotary_enabled = !!data.rotary_enabled;
+    this.saveConfig(config);
+    callback({ success: true });
+};
 
-    // MCP config save
-    self.updateMcpConfig = function (data, callback) {
-        let config = self.loadConfig();
-        if (data.mcp23017_address) config.mcp23017_address = data.mcp23017_address;
-        self.saveConfig(config);
-        callback({ success: true });
-    };
+ControllerQuadify.prototype.updateIrConfig = function (data, callback) {
+    let config = this.loadConfig();
+    config.ir_enabled = !!data.ir_enabled;
+    config.ir_type = data.ir_type;
+    config.ir_gpio = parseInt(data.ir_gpio) || 26;
+    this.saveConfig(config);
+    callback({ success: true });
+};
 
-    // IR config save
-    self.updateIrConfig = function (data, callback) {
-        let config = self.loadConfig();
-        config.ir_enabled = !!data.ir_enabled;
-        config.ir_type = data.ir_type;
-        config.ir_gpio = parseInt(data.ir_gpio) || 26;
-        self.saveConfig(config);
-        callback({ success: true });
-    };
+ControllerQuadify.prototype.applyIrConfig = function (data, callback) {
+    // Here you would copy lircd.conf/lircrc and restart services, etc.
+    callback({ success: true, msg: 'IR config applied (dummy handler)' });
+};
 
-    // IR apply (dummy)
-    self.applyIrConfig = function (data, callback) {
-        // Here you would copy lircd.conf/lircrc and restart services, etc.
-        callback({ success: true, msg: 'IR config applied (dummy handler)' });
-    };
-
-    return self;
+// --- Utility: required by Volumio for plugin config UI ---
+ControllerQuadify.prototype.getConfigurationFiles = function () {
+    return ['quadify/config.yaml'];
 };
