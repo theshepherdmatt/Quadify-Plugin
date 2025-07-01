@@ -13,7 +13,8 @@ apt-get update
 apt-get install -y python3 python3-pip libjpeg-dev zlib1g-dev \
   libfreetype6-dev i2c-tools python3-smbus libgirepository1.0-dev \
   pkg-config libcairo2-dev libffi-dev build-essential \
-  libxml2-dev libxslt1-dev libssl-dev lirc lsof
+  libxml2-dev libxslt1-dev libssl-dev lirc lsof \
+  python3-gi python3-cairo gir1.2-gtk-3.0
 
 # ---- Nuke broken Python package installs before installing requirements ----
 log "Cleaning up Python packaging issues (importlib-metadata, setuptools)..."
