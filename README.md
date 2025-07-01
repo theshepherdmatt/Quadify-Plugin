@@ -16,11 +16,13 @@ Quadify extends your Volumio system with:
 
 ---
 
-### Installation
-
 1. **SSH into your Volumio device.**
-2. Clone this repository or install via the Volumio plugin system.
-3. Run the installer from the plugin directory:
+2. **Clone this repository** into the Volumio plugins directory:
+
+   ```bash
+   cd /data/plugins/system_controller
+   git clone https://github.com/theshepherdmatt/Quadify-Plugin.git quadify
+   cd quadify
 
    ```bash
    cd /data/plugins/system_controller/quadify
