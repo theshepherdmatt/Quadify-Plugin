@@ -41,13 +41,13 @@ modprobe i2c-dev || true
 modprobe spi-bcm2835 || true
 
 log "Setting up systemd service for Quadify..."
-if [ -f service/quadify.service ]; then
-  cp service/quadify.service /etc/systemd/system/quadify.service
+if [ -f quadify/service/quadify.service ]; then
+  cp quadify/service/quadify.service /etc/systemd/system/quadify.service
   systemctl daemon-reload
   systemctl enable quadify.service
   systemctl restart quadify.service
 else
-  log "No service/quadify.service found! Skipping systemd setup."
+  log "No quadify/service/quadify.service found! Skipping systemd setup."
 fi
 
 log "Setting permissions for plugin folder..."
