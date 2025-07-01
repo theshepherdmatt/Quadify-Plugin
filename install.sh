@@ -29,7 +29,7 @@ python3 -m pip install --upgrade pip
 python3 -m pip install --upgrade setuptools importlib-metadata
 
 log "Installing Python dependencies from requirements.txt..."
-python3 -m pip install --upgrade --ignore-installed -r requirements.txt
+python3 -m pip install --upgrade --ignore-installed -r ./quadify/requirements.txt
 
 # ---- Usual plugin install steps ----
 log "Enabling I2C/SPI in /boot/userconfig.txt..."
