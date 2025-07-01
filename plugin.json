@@ -1,6 +1,6 @@
 {
   "id": "quadify",
-  "name": "quadify",
+  "name": "Quadify",
   "description": "Integrates the Quadify Python interface with Volumio.",
   "author": "Matt Shepherd",
   "version": "1.0.0",
@@ -8,5 +8,5 @@
   "icon": "fa-cogs",
   "isManuallyInstalled": true,
   "volumio_version": ">=3.0.0",
-  "node": ">=10"
+  "node": ">=14"
 }

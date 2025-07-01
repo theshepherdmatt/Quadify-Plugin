@@ -1,35 +1,41 @@
 {
-  "name": "audiophonics_evo_sabre",
-  "version": "2.0.1",
-  "description": "Hardware configuration & display drivers for Evo Sabre",
+  "name": "quadify",
+  "version": "1.0.0",
+  "description": "Python-powered Volumio plugin: Quadify integration",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"No test specified\" && exit 0"
   },
-  "author": "Olivier Audiophonics",
-  "license": "ISC", 
-  "repository": "https://github.com/audiophonics/volumio-plugins-sources-bookworm",
+  "author": "YOUR_NAME_OR_ORG",
+  "license": "MIT",
+  "repository": "https://github.com/theshepherdmatt/Quadify-Plugin",
   "volumio_info": {
-    "prettyName": "Audiophonics Evo Sabre", 
-    "icon": "fa-hdd-o", 
-    "plugin_type": "system_hardware", 
+    "prettyName": "Quadify Plugin",
+    "icon": "fa-microchip",
+    "plugin_type": "music_service",
     "architectures": [
-			"armhf"
-		],
-		"os": [ 
-			"bookworm"
-		],
-		"details": "Hardware configuration & display drivers for Evo Sabre",  
-		"changelog": "Replaced rpio nodejs dependency with spi-device & implemented kernel agnostic GPIO handling" 
+      "armhf",
+      "armv7",
+      "arm64",
+      "x86",
+      "i386"
+    ],
+    "os": [
+      "buster",
+      "bullseye",
+      "bookworm"
+    ],
+    "details": "Integration for Quadify via Python backend.",
+    "changelog": "Initial release with Python integration."
   },
   "engines": {
-		"node": ">=20",
-		"volumio": ">=0" 
-	},
+    "node": ">=14",
+    "volumio": ">=3"
+  },
   "dependencies": {
-		"fs-extra": "*",
-		"kew": "*",                  
-		"systeminformation": "*",
-		"v-conf": "*"
+    "fs-extra": "^11.2.0",
+    "kew": "^0.7.0",
+    "systeminformation": "^5.11.19",
+    "v-conf": "^1.4.0"
   }
 }

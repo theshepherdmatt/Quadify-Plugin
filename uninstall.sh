@@ -1,15 +1,16 @@
 #!/bin/bash
+set -e
 
-# Uninstall dependendencies
+echo "Uninstalling Quadify plugin..."
 
-systemctl stop evo_oled2	
-systemctl stop evo_remote
-systemctl stop evo_irexec
+# Remove Python packages if needed (optional)
+# pip3 uninstall -r requirements.txt -y
 
-rm /etc/systemd/system/evo_oled2.service
-rm /etc/systemd/system/evo_remote.service
-rm /etc/systemd/system/evo_irexec.service
+# Stop and disable any services Quadify may have created
+if systemctl list-units --full -all | grep -q "quadify.service"; then
+  systemctl stop quadify.service
+  systemctl disable quadify.service
+  rm -f /etc/systemd/system/quadify.service
+fi
 
-
-echo "Done"
-echo "pluginuninstallend"
+echo "Quadify plugin uninstall complete."
