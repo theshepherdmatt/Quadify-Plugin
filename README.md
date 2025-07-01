@@ -46,7 +46,7 @@ sudo chown volumio:volumio /data/plugins/system_controller
 
 ```bash
 cd /data/plugins/system_controller
-git clone https://github.com/theshepherdmatt/Quadify-Plugin.git quadify
+sudo git clone https://github.com/theshepherdmatt/Quadify-Plugin.git quadify
 cd quadify
 ```
 
