@@ -1,6 +1,4 @@
-Got it! Let me spruce that up with cleaner formatting, nicer headings, and a more polished tone for a pro README:
 
-````markdown
 # Quadify — Volumio 3 Plugin
 
 **Quadify** is a comprehensive hardware interface plugin for **Volumio 3** that adds:
