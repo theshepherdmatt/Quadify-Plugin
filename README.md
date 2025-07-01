@@ -91,16 +91,3 @@ Use the Volumio Web UI plugin settings page to configure display, rotary, button
 Thanks to the Volumio community and all contributors who helped bring Quadify to life!
 
 ---
-
-```
-
-This version has:
-
-- Clear, descriptive headings  
-- Short paragraphs with step-by-step instructions  
-- Tables for feature clarity  
-- Bold emphasis for important notes  
-- Clean code blocks with consistent indentation  
-
-If you want, I can add badges (build/status/license) or a "Getting Help" section next! Would that be useful?
-```
