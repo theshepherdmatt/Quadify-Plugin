@@ -56,7 +56,7 @@ Make sure the install script is executable and run it:
 
 ```bash
 sudo chmod +x ./install.sh
-sudo /data/plugins/music_service/quadify/install.sh
+sudo /data/plugins/music_service/quadifyplugin/install.sh
 ```
 
 > **Note:** If you encounter a `command not found` error when running `sudo ./install.sh`, use the full path as above.
