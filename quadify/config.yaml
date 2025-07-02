@@ -10,141 +10,141 @@ volumio:
   connection_timeout: 5  # Timeout in seconds for Volumio API connection
 
 display:
-  icon_dir: "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus"
-  default_album_art: "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/albumart.jpg"
-  loading_gif_path: "/data/plugins/system_controller/quadify/quadify/src/assets/images/gif/Loading.gif"
-  ready_gif_path: "/data/plugins/system_controller/quadify/quadify/src/assets/images/gif/ready.gif"
-  ready_new_path: "/data/plugins/system_controller/quadify/quadify/src/assets/images/gif/ready_new.gif"
-  ready_loop_path: "/data/plugins/system_controller/quadify/quadify/src/assets/images/gif/ready_loop.gif"
-  connecting_path: "/data/plugins/system_controller/quadify/quadify/src/assets/images/gif/connecting.gif"
-  connected_path: "/data/plugins/system_controller/quadify/quadify/src/assets/images/gif/connected.gif"
-  updating_path: "/data/plugins/system_controller/quadify/quadify/src/assets/images/gif/updating.gif"
-  updatedmessage_path: "/data/plugins/system_controller/quadify/quadify/src/assets/images/gif/updatedmessage.gif"
-  screensaver_gif_path: "/data/plugins/system_controller/quadify/quadify/src/assets/images/screensaver/geo.gif"  
-  logo_path: "/data/plugins/system_controller/quadify/quadify/src/assets/images/gif/logo.gif"
-  shutdown_path: "/data/plugins/system_controller/quadify/quadify/src/assets/images/shuttingdown.png"
+  icon_dir: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus"
+  default_album_art: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/albumart.jpg"
+  loading_gif_path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/gif/Loading.gif"
+  ready_gif_path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/gif/ready.gif"
+  ready_new_path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/gif/ready_new.gif"
+  ready_loop_path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/gif/ready_loop.gif"
+  connecting_path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/gif/connecting.gif"
+  connected_path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/gif/connected.gif"
+  updating_path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/gif/updating.gif"
+  updatedmessage_path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/gif/updatedmessage.gif"
+  screensaver_gif_path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/screensaver/geo.gif"  
+  logo_path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/gif/logo.gif"
+  shutdown_path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/shuttingdown.png"
 
   rotation: 2  # Set rotation if needed (0, 90, 180, 270)
 
   fonts:
     playback_large:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/DSEG7Classic-Light.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/DSEG7Classic-Light.ttf"
       size: 45
     playback_medium:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/OpenSans-Regular.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/OpenSans-Regular.ttf"
       size: 18
     playback_small:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/OpenSans-Regular.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/OpenSans-Regular.ttf"
       size: 12
     artist_font:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/OpenSans-Regular.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/OpenSans-Regular.ttf"
       size: 12
     song_font:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/OpenSans-Regular.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/OpenSans-Regular.ttf"
       size: 14
     data_font:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/OpenSans-Regular.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/OpenSans-Regular.ttf"
       size: 10
     menu_font:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/OpenSans-Regular.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/OpenSans-Regular.ttf"
       size: 12
     menu_font_bold:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/OpenSans-Bold.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/OpenSans-Bold.ttf"
       size: 12
     clock_large:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/DSEG7Classic-LightItalic.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/DSEG7Classic-LightItalic.ttf"
       size: 35
     sample_rate:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/DSEG7Classic-LightItalic.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/DSEG7Classic-LightItalic.ttf"
       size: 46
     sample_rate_khz:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/OpenSans-Regular.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/OpenSans-Regular.ttf"
       size: 12
     volume_small:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/OpenSans-Regular.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/OpenSans-Regular.ttf"
       size: 8
 
       # Radio fonts
     radio_title:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/OpenSans-Regular.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/OpenSans-Regular.ttf"
       size: 15
     radio_bitrate:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/OpenSans-Regular.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/OpenSans-Regular.ttf"
       size: 10
     radio_small:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/OpenSans-Regular.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/OpenSans-Regular.ttf"
       size: 12
 
       # Minimal fonts
     minimal_volume:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/Montserrat-Bold.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/Montserrat-Bold.ttf"
       size: 15
     minimal_service:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/Montserrat-Regular.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/Montserrat-Regular.ttf"
       size: 27
     minimal_data:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/Montserrat-Regular.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/Montserrat-Regular.ttf"
       size: 10
 
       # Clock fonts (for hours/minutes)
     clock_sans:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/OpenSans-Regular.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/OpenSans-Regular.ttf"
       size: 40
     clock_dots:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/led_counter-7.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/led_counter-7.ttf"
       size: 40
     clock_digital:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/DSEG7Classic-Light.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/DSEG7Classic-Light.ttf"
       size: 30
     clock_bold:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/Montserrat-Bold.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/Montserrat-Bold.ttf"
       size: 42
 
     # Smaller date fonts (for optional date line)
     clockdate_sans:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/OpenSans-Regular.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/OpenSans-Regular.ttf"
       size: 15
     clockdate_dots:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/led_counter-7.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/led_counter-7.ttf"
       size: 15
     clockdate_digital:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/DSEG7Classic-Light.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/DSEG7Classic-Light.ttf"
       size: 10
     clockdate_bold:
-      path: "/data/plugins/system_controller/quadify/quadify/src/assets/fonts/Montserrat-Regular.ttf"
+      path: "/data/plugins/music_service/quadifyplugin/quadify/src/assets/fonts/Montserrat-Regular.ttf"
       size: 10
 
   refresh_rate: 60  # Display refresh rate in Hz
 
   cache_images: true  # Cache frequently used images for faster access
   preload_images:
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/webradio.png"
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/radioparadise.png"
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/motherearth.png"
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/mpd.png"
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/library.png"
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/stream.png"
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/tidal.png"
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/qobuz.png"
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/spop.png"      
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/playlists.png"
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/default.png"
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/nas.png"
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/usb.png"
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/volume.png"
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/config.png"
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/back.png"
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/clocksettings.png"
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/displaysettings.png"
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/systeminfo.png"
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/systemupdate.png"
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/screensaversettings.png"
-    - "/data/plugins/system_controller/quadify/quadify/src/assets/images/menus/airplay.png"
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/webradio.png"
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/radioparadise.png"
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/motherearth.png"
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/mpd.png"
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/library.png"
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/stream.png"
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/tidal.png"
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/qobuz.png"
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/spop.png"      
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/playlists.png"
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/default.png"
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/nas.png"
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/usb.png"
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/volume.png"
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/config.png"
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/back.png"
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/clocksettings.png"
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/displaysettings.png"
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/systeminfo.png"
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/systemupdate.png"
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/screensaversettings.png"
+    - "/data/plugins/music_service/quadifyplugin/quadify/src/assets/images/menus/airplay.png"
 
 mcp23017_address: 0x20
 
 logging:
   level: "DEBUG"  # Options: DEBUG, INFO, WARNING, ERROR
-  log_file: "/data/plugins/system_controller/quadify/quadify/quadifyclean.log"
+  log_file: "/data/plugins/music_service/quadifyplugin/quadify/quadifyclean.log"
   log_format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 

@@ -66,7 +66,7 @@ def set_has_seen_ready():
 
 def is_first_run():
     netconfigured = os.path.exists('/data/configuration/netconfigured')
-    network_configs = glob.glob('/data/configuration/system_controller/network/*.json')
+    network_configs = glob.glob('/data/configuration/music_service/network/*.json')
     return not (netconfigured and network_configs)
 
 def is_network_online(host="8.8.8.8", port=53, timeout=3):

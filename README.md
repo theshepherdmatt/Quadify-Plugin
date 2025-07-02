@@ -38,14 +38,14 @@ ssh volumio@<volumio-ip-address>
 Create the system\_controller plugin folder if it doesn’t exist, and set the correct ownership:
 
 ```bash
-sudo mkdir -p /data/plugins/system_controller
-sudo chown volumio:volumio /data/plugins/system_controller
+sudo mkdir -p /data/plugins/music_service
+sudo chown volumio:volumio /data/plugins/music_service
 ```
 
 ### Step 3: Clone the Quadify repository
 
 ```bash
-cd /data/plugins/system_controller
+cd /data/plugins/music_service
 sudo git clone https://github.com/theshepherdmatt/Quadify-Plugin.git quadify
 cd quadify
 ```
@@ -56,7 +56,7 @@ Make sure the install script is executable and run it:
 
 ```bash
 sudo chmod +x ./install.sh
-sudo /data/plugins/system_controller/quadify/install.sh
+sudo /data/plugins/music_service/quadify/install.sh
 ```
 
 > **Note:** If you encounter a `command not found` error when running `sudo ./install.sh`, use the full path as above.

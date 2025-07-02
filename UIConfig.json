@@ -10,7 +10,7 @@
       "icon": "fa-microchip",
       "onSave": {
         "type": "controller",
-        "endpoint": "system_controller/quadify",
+        "endpoint": "music_service/quadify",
         "method": "updateMcpConfig"
       },
       "saveButton": {
@@ -32,7 +32,7 @@
           "doc": "Runs i2cdetect to find MCP23017 and updates config.yaml.",
           "onClick": {
             "type": "plugin",
-            "endpoint": "system_controller/quadify",
+            "endpoint": "music_service/quadify",
             "method": "autoDetectMCP"
           }
         }
@@ -45,7 +45,7 @@
       "icon": "fa-refresh",
       "onSave": {
         "type": "controller",
-        "endpoint": "system_controller/quadify",
+        "endpoint": "music_service/quadify",
         "method": "updateRotaryConfig"
       },
       "saveButton": {
@@ -89,7 +89,7 @@
       "icon": "fa-remote",
       "onSave": {
         "type": "controller",
-        "endpoint": "system_controller/quadify",
+        "endpoint": "music_service/quadify",
         "method": "updateIrConfig"
       },
       "saveButton": {
@@ -140,7 +140,7 @@
           "doc": "Apply and test the selected IR remote configuration.",
           "onClick": {
             "type": "plugin",
-            "endpoint": "system_controller/quadify",
+            "endpoint": "music_service/quadify",
             "method": "applyIrConfig"
           }
         }
