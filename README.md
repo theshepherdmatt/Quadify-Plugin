@@ -1,5 +1,3 @@
----
-
 # Quadify — Volumio 3 Plugin
 
 **Quadify** is a comprehensive hardware interface plugin for **Volumio 3** that adds:
