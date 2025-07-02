@@ -4,8 +4,8 @@ After=sound.target
 
 [Service]
 Type=simple
-WorkingDirectory=/data/plugins/music_service/quadifyplugin/cava
-ExecStart=/usr/local/bin/cava -p /data/plugins/music_service/quadifyplugin/cava/config/default_config
+WorkingDirectory=/data/plugins/music_service/quadify/cava
+ExecStart=/usr/local/bin/cava -p /data/plugins/music_service/quadify/cava/config/default_config
 Restart=always
 RestartSec=3
 User=volumio
