@@ -1,13 +1,22 @@
 {
   "id": "quadify",
   "name": "Quadify",
-  "description": "Integrates the Quadify Python interface with Volumio.",
-  "author": "Matt Shepherd",
-  "version": "1.0.0",
   "category": "music_service",
-  "icon": "fa-cogs",
-  "isManuallyInstalled": true,
-  "volumio_version": ">=3.0.0",
-  "node": ">=14",
-  "uninstall_script": "uninstall.js"
+  "version": "1.0.0",
+  "author": "theshepherdmatt",
+  "icon": "fa-microchip",
+  "enabled": true,
+  "dependencies": [],
+  "homepage": "https://github.com/theshepherdmatt/Quadify-Plugin",
+  "keywords": ["quadify", "oled", "buttons", "IR", "CAVA"],
+  "description": "Custom hardware interface for Volumio: OLED display, buttons, IR remote, and CAVA support.",
+  "screenshots": [],
+  "volumio_version": ">=3.000",
+  "ui": {
+    "config": {
+      "page": "UIConfig.json"
+    }
+  },
+  "main": "index.js",
+  "musicService": true
 }
