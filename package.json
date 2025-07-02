@@ -14,7 +14,7 @@
     "url": "https://github.com/theshepherdmatt/Quadify-Plugin/issues"
   },
   "volumio_info": {
-    "prettyName": "Quadify Plugin",
+    "prettyName": "Quadify",
     "icon": "fa-microchip",
     "plugin_type": "music_service",
     "architectures": [
@@ -26,8 +26,7 @@
     ],
     "os": [
       "buster",
-      "bullseye",
-      "bookworm"
+      "bullseye"
     ],
     "details": "Integration for Quadify via Python backend.",
     "changelog": "Initial release with Python integration."
