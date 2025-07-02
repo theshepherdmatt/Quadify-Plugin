@@ -7,7 +7,7 @@ Before=quadify.service
 [Service]
 Type=oneshot
 User=volumio
-ExecStart=/usr/bin/python3 /data/plugins/music_service/quadifyplugin/quadify/scripts/early_led8.py
+ExecStart=/usr/bin/python3 /data/plugins/music_service/quadify/quadifyapp/scripts/early_led8.py
 RemainAfterExit=yes
 
 [Install]
