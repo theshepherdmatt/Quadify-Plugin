@@ -27,7 +27,8 @@
 SSH into your Volumio device and **run this command**:
 
 ```bash
-cd /data/plugins/music_service \
+sudo mkdir -p /data/plugins/music_service \
+  && cd /data/plugins/music_service \
   && sudo git clone https://github.com/theshepherdmatt/Quadify-Plugin.git quadify \
   && cd quadify \
   && sudo chmod +x install.sh \
