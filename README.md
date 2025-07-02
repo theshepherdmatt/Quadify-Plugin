@@ -47,7 +47,7 @@ sudo chown volumio:volumio /data/plugins/music_service
 ```bash
 cd /data/plugins/music_service
 sudo git clone https://github.com/theshepherdmatt/Quadify-Plugin.git quadifyplugin
-cd quadify
+cd quadifyplugin
 ```
 
 ### Step 4: Install Quadify
