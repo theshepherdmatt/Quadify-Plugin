@@ -7,7 +7,7 @@
   "sw_pin": 6,
   "ir_enabled": false,
   "ir_type": "default",
-  "ir_gpio": 26,
+  "ir_gpio": 27,
   "cava_enabled": false,
   "buttonsleds_enabled": false
 }
