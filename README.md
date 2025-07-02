@@ -47,7 +47,7 @@ sudo chown volumio:volumio /data/plugins/music_service
 ```bash
 cd /data/plugins/music_service
 sudo git clone https://github.com/theshepherdmatt/Quadify-Plugin.git quadify
-cd quadifyplugin
+cd quadify
 ```
 
 ### Step 4: Install Quadify
@@ -56,7 +56,7 @@ Make sure the install script is executable and run it:
 
 ```bash
 sudo chmod +x ./install.sh
-sudo /data/plugins/music_service/quadifyplugin/install.sh
+sudo /data/plugins/music_service/quadify/install.sh
 ```
 
 > **Note:** If you encounter a `command not found` error when running `sudo ./install.sh`, use the full path as above.
