@@ -6,8 +6,8 @@ After=network.target
 Type=simple
 User=volumio
 WorkingDirectory=/data/plugins/music_service/quadifyplugin/quadify
-ExecStart=/usr/bin/python3 /data/plugins/music_service/quadifyplugin/quadify/src/main.py
-ExecStop=/usr/bin/python3 /data/plugins/music_service/quadifyplugin/quadify/service/reset_oled_gpio.py
+ExecStart=/usr/bin/python3 /data/plugins/music_service/quadify/quadifyapp/src/main.py
+ExecStop=/usr/bin/python3 /data/plugins/music_service/quadify/quadifyapp/service/reset_oled_gpio.py
 Restart=on-failure
 Environment="PYTHONUNBUFFERED=1"
 
