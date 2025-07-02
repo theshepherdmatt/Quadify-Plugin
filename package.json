@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"No test specified\" && exit 0"
   },
-  "author": "YOUR_NAME_OR_ORG",
+  "author": "Matt Shepherd"
   "license": "MIT",
   "repository": "https://github.com/theshepherdmatt/Quadify-Plugin",
   "volumio_info": {
