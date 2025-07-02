@@ -2,7 +2,13 @@
   "name": "quadify",
   "version": "1.0.0",
   "description": "A Volumio plugin that integrates a Python-based Quadify backend.",
-  "keywords": ["volumio", "plugin", "quadify", "python", "music_service"],
+  "keywords": [
+    "volumio",
+    "plugin",
+    "quadify",
+    "python",
+    "music_service"
+  ],
   "main": "index.js",
   "scripts": {
     "test": "echo \"No test specified\" && exit 0"
@@ -37,6 +43,7 @@
   },
   "dependencies": {
     "fs-extra": "^11.2.0",
+    "js-yaml": "^4.1.0",
     "kew": "^0.7.0",
     "systeminformation": "^5.11.19",
     "v-conf": "^1.4.0"

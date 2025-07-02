@@ -43,7 +43,7 @@ class DisplayManager:
         "webradio", "motherearthradio", "radio_paradise", "mpd", "default", "nas", "usb", "back", 
         "config", "irremote", "volume", "displaysettings", "clocksettings", "screensaversettings", 
         "systeminfo", "systemupdate"]
-        icon_dir = self.config.get('icon_dir', "/home/volumio/Quadify/src/assets/images/menus")
+        icon_dir = self.config.get('icon_dir', "/data/plugins/music_service/quadify/quadifyapp/src/assets/images/menus")
 
         for service in services:
             icon_path = os.path.join(icon_dir, f"{service}.png")

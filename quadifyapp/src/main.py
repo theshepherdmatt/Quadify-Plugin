@@ -118,7 +118,7 @@ def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(script_dir, '..', 'config.yaml')
     config = load_config(config_path)
-    display_config = config.get('display', {})
+    display_config = config.get('quadifyapp', {}).get('display', {})
 
     # --- DisplayManager ---
     display_manager = DisplayManager(display_config)
