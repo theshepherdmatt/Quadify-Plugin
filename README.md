@@ -14,7 +14,7 @@
 
 | Feature                 | Description                                                      |
 | ----------------------- | ---------------------------------------------------------------- |
-| OLED/LCD Display        | Rich playback info and UI on secondary display                   |
+| OLED Display        | Rich playback info and UI on secondary display                   |
 | Rotary Encoder          | Hardware volume and menu control                                 |
 | MCP23017 Button/LED     | Expandable custom button and LED panel via I²C                   |
 | IR Remote               | Easy remote control setup and diagnostics                        |
@@ -22,7 +22,7 @@
 
 ---
 
-## 🚀 Installation (1-Line, Fully Automated)
+## Installation (1-Line, Fully Automated)
 
 SSH into your Volumio device and **run this command**:
 
