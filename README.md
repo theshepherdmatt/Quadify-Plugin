@@ -1,3 +1,5 @@
+---
+
 # Quadify — Volumio 3 Plugin
 
 **Quadify** is a comprehensive hardware interface plugin for **Volumio 3** that adds:
@@ -22,68 +24,26 @@
 
 ---
 
-## Installation
+## 🚀 Installation (1-Line, Fully Automated)
 
-We’ve streamlined the installation process to minimize manual steps and ensure idempotency.
-
-### Prerequisites
-
-* **SSH access** to your Volumio device
-* **Git** and **sudo** privileges
-* A valid **SSH key** added to your [GitHub SSH keys](https://github.com/settings/keys)
-
-### Installation Script (Automated)
-
-Instead of manual cloning and permission fixes, we provide a one‑line installer:
+SSH into your Volumio device and **run this command**:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/theshepherdmatt/Quadify-Plugin/main/install.sh \
-  | sudo bash
+cd /data/plugins/music_service \
+  && sudo git clone https://github.com/theshepherdmatt/Quadify-Plugin.git quadify \
+  && cd quadify \
+  && sudo chmod +x install.sh \
+  && sudo ./install.sh
 ```
 
-This does:
+* **Clones Quadify to the correct plugin folder**
+* **Installs all system, Python, and Node.js dependencies**
+* **Enables systemd services for startup**
+* **No SSH keys required for public repo**
+* Prints **"Quadify installation complete"** when done.
 
-1. Creates `/data/plugins/music_service/quadify` (if missing).
-2. Clones the plugin repo.
-3. Installs all **system**, **Python**, and **Node.js** dependencies.
-4. Enables and starts the required systemd services.
-
-After the script completes, it will print **"Quadify installation complete"**.
-
-### (Optional) Manual Steps
-
-If you prefer manual control, follow these steps:
-
-1. **SSH into your Volumio**:
-
-   ```bash
-   ssh volumio@<volumio-ip-address>
-   ```
-2. **Prepare plugin directory**:
-
-   ```bash
-   sudo mkdir -p /data/plugins/music_service
-   sudo chown volumio:volumio /data/plugins/music_service
-   ```
-3. **Clone the repository**:
-
-   ```bash
-   cd /data/plugins/music_service
-   git clone git@github.com:theshepherdmatt/Quadify-Plugin.git quadify
-   ```
-4. **Run the installer**:
-
-   ```bash
-   cd quadify
-   sudo chmod +x install.sh
-   sudo ./install.sh
-   ```
-5. **Reboot** (recommended):
-
-   ```bash
-   sudo reboot
-   ```
-6. **Configure via Volumio UI**: enable/disable features and adjust settings in **Plugins → Installed Plugins → Quadify**.
+> **Reboot after install for hardware and services to initialize.
+> Configure via Volumio’s Web UI in Plugins → Installed Plugins → Quadify.**
 
 ---
 
@@ -96,11 +56,13 @@ If you prefer manual control, follow these steps:
 
 ## Documentation & Support
 
-* Wiki: [https://github.com/theshepherdmatt/Quadify-Plugin/wiki](https://github.com/theshepherdmatt/Quadify-Plugin/wiki)
-* Issues: [https://github.com/theshepherdmatt/Quadify-Plugin/issues](https://github.com/theshepherdmatt/Quadify-Plugin/issues)
+* [Quadify Wiki](https://github.com/theshepherdmatt/Quadify-Plugin/wiki)
+* [GitHub Issues](https://github.com/theshepherdmatt/Quadify-Plugin/issues)
 
 ---
 
 ## Credits
 
 Thanks to the Volumio community and all contributors who helped bring Quadify to life!
+
+---
