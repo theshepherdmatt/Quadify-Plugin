@@ -1,6 +1,5 @@
 #!/bin/bash
-# Quadify – plugin installer
-# --------------------------
+# Quadify – unified plugin installer
 set -euo pipefail
 
 cd "$(dirname "$0")"     # /data/plugins/music_service/quadify
@@ -9,46 +8,35 @@ rm -f "$LOG_FILE"
 
 log() { echo "[Quadify Install] $1" | tee -a "$LOG_FILE"; }
 
-# ──────────────────────────────────────────────────────────────────
 # 1. System prerequisites
-# ──────────────────────────────────────────────────────────────────
 log "Installing system dependencies …"
 apt-get update
 apt-get install -y \
-  python3 python3-pip python3-venv \
+  python3 python3-pip \
   libjpeg-dev zlib1g-dev libfreetype6-dev \
   i2c-tools python3-smbus \
   libgirepository1.0-dev pkg-config libcairo2-dev python3-gi python3-cairo gir1.2-gtk-3.0 \
   build-essential libffi-dev libxml2-dev libxslt1-dev libssl-dev \
   lirc lsof
 
-# ──────────────────────────────────────────────────────────────────
-# 2. Clean up any broken global Python packages
-# ──────────────────────────────────────────────────────────────────
+# 2. Remove conflicting Python packages (optional but helpful for Pi/Volumio!)
 log "Removing conflicting Python packages …"
 pip3 uninstall -y importlib-metadata setuptools python-socketio socketio socketIO-client >/dev/null 2>&1 || true
-PY36_SITEPKG=$(python3 - <<'PY' ; import site, sys, pathlib, json, os ; print(pathlib.Path(next(p for p in site.getsitepackages() if 'dist-packages' in p))) ; PY)
+PY36_SITEPKG=$(python3 - <<'PY' ; import site, sys, pathlib ; print(pathlib.Path(next(p for p in site.getsitepackages() if 'dist-packages' in p))) ; PY)
 rm -rf "${PY36_SITEPKG}"/{importlib_metadata*,setuptools*,socketio*,python_socketio*,socketIO_client*}
 
-log "Upgrading pip / setuptools / importlib-metadata …"
+log "Upgrading pip, setuptools, importlib-metadata …"
 python3 -m pip install --upgrade pip setuptools importlib-metadata
 
-# ──────────────────────────────────────────────────────────────────
-# 3. Install plugin-specific Python requirements in a venv
-# ──────────────────────────────────────────────────────────────────
-VENV_DIR=".venv"
-if [ -d "$VENV_DIR" ]; then rm -rf "$VENV_DIR"; fi
-python3 -m venv "$VENV_DIR"
-source "$VENV_DIR/bin/activate"
+# 3. Install Node.js plugin dependencies
+log "Installing Node.js dependencies …"
+npm install --production --silent
 
+# 4. Install Python requirements (global)
 log "Installing Python dependencies from requirements.txt …"
-python -m pip install --upgrade --ignore-installed -r ./quadifyapp/requirements.txt
+python3 -m pip install --upgrade --ignore-installed -r ./quadifyapp/requirements.txt
 
-deactivate
-
-# ──────────────────────────────────────────────────────────────────
-# 4. Enable I2C / SPI overlays
-# ──────────────────────────────────────────────────────────────────
+# 5. Enable I2C/SPI overlays
 log "Enabling I2C & SPI in /boot/userconfig.txt …"
 CONFIG_FILE="/boot/userconfig.txt"
 touch "$CONFIG_FILE"
@@ -64,15 +52,14 @@ else
   START_SERVICE=1
 fi
 
-# ──────────────────────────────────────────────────────────────────
-# 5. Install / enable the systemd service
-# ──────────────────────────────────────────────────────────────────
+# 6. Install/enable main systemd service
 log "Setting up systemd service …"
 SERVICE_SRC="quadifyapp/service/quadify.service"
 SERVICE_DST="/etc/systemd/system/quadify.service"
 
 if [ -f "$SERVICE_SRC" ]; then
   cp "$SERVICE_SRC" "$SERVICE_DST"
+  chmod 644 "$SERVICE_DST"
   systemctl daemon-reload
   systemctl enable quadify.service
   if [ "$START_SERVICE" -eq 1 ]; then
@@ -84,19 +71,15 @@ else
   log "Warning: $SERVICE_SRC missing – skipping systemd setup."
 fi
 
-# ──────────────────────────────────────────────────────────────────
-# 6. Permissions
-# ──────────────────────────────────────────────────────────────────
+# 7. Permissions
 log "Fixing ownership & permissions …"
 chown -R volumio:volumio .
 chmod -R 755 .
 
-# ──────────────────────────────────────────────────────────────────
-# 7. Sanity check (dev-time helper)
-# ──────────────────────────────────────────────────────────────────
+# 8. Sanity check (optional dev check)
 python3 - <<'PY' || { log 'Packaging is still broken!'; exit 1; }
 import importlib_metadata, setuptools, socketio, sys
 print('Packaging OK →', setuptools.__version__)
 PY
 
-log "Quadify base installation complete. Buttons / IR / rotary can now be enabled from plugin settings."
+log "Quadify installation complete. Buttons / IR / rotary can now be enabled from plugin settings."
