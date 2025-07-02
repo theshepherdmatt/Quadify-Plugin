@@ -1,22 +1,13 @@
 {
-    "sleep_after": {
-        "type": "number",
-        "value": 1200
-    },
-    "deep_sleep_after": {
-        "type": "number",
-        "value": 3600
-    },
-    "contrast": {
-        "type": "number",
-        "value": 100
-    },
-    "remote_active": {
-        "type": "boolean",
-        "value": true
-    },
-    "oled_active": {
-        "type": "boolean",
-        "value": true
-    }
+  "enabled": true,
+  "mcp23017_address": "0x20",
+  "rotary_enabled": false,
+  "clk_pin": 13,
+  "dt_pin": 5,
+  "sw_pin": 6,
+  "ir_enabled": false,
+  "ir_type": "default",
+  "ir_gpio": 26,
+  "cava_enabled": false,
+  "buttonsleds_enabled": false
 }
