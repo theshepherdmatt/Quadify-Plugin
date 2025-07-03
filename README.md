@@ -2,7 +2,7 @@
 
 **Quadify** is a comprehensive hardware interface plugin for **Volumio 3** that adds:
 
-* Advanced OLED/LCD display with Now Playing info, album art, menus, screensavers, system status, and more
+* Advanced OLED SPI 1322 display with Now Playing info, album art, menus, screensavers, system status, and more
 * Rotary encoder support for volume, track navigation, and menu scrolling
 * MCP23017 I²C button and LED matrix support for full customizable controls
 * IR remote control compatibility with popular remotes
