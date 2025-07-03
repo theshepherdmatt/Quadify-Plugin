@@ -4,9 +4,9 @@
   },
   "sections": [
     {
-      "id": "core_services",
+      "id": "display_controls",
       "element": "section",
-      "label": "Service Controls",
+      "label": "Display Controls",
       "icon": "fa-plug",
       "onSave": {
         "type": "controller",
@@ -16,7 +16,6 @@
       "saveButton": {
         "label": "Apply",
         "data": [
-          "enableIR",
           "enableCava",
           "display_mode",
           "clock_font_key",
@@ -29,12 +28,6 @@
         ]
       },
       "content": [
-        {
-          "id": "enableIR",
-          "element": "switch",
-          "label": "Enable IR Remote",
-          "value": false
-        },
         {
           "id": "enableCava",
           "element": "switch",
@@ -113,9 +106,32 @@
       ]
     },
     {
+      "id": "ir_remote_section",
+      "element": "section",
+      "label": "IR Remote Control",
+      "icon": "fa-remote-control",
+      "onSave": {
+        "type": "controller",
+        "endpoint": "music_service/quadify",
+        "method": "setUIConfig"
+      },
+      "saveButton": {
+        "label": "Apply",
+        "data": ["enableIR"]
+      },
+      "content": [
+        {
+          "id": "enableIR",
+          "element": "switch",
+          "label": "Enable IR Remote",
+          "value": false
+        }
+      ]
+    },
+    {
       "id": "mcp23017_config",
       "element": "section",
-      "label": "MCP23017 I2C Address & Buttons/LEDs",
+      "label": "MCP23017 I2C Address & Buttons",
       "icon": "fa-microchip",
       "onSave": {
         "type": "controller",
@@ -123,22 +139,22 @@
         "method": "updateMcpConfig"
       },
       "saveButton": {
-        "label": "Save Address",
-        "data": ["enableButtonsLED", "mcp23017_address"]
+        "label": "Save Address & Buttons",
+        "data": ["mcp23017_address", "enableButtonsLED"]
       },
       "content": [
-        {
-          "id": "enableButtonsLED",
-          "element": "switch",
-          "label": "Enable Buttons & LEDs",
-          "value": false
-        },
         {
           "id": "mcp23017_address",
           "element": "input",
           "type": "text",
           "label": "I2C Address (e.g. 0x20)",
           "value": ""
+        },
+        {
+          "id": "enableButtonsLED",
+          "element": "switch",
+          "label": "Enable Buttons & LEDs",
+          "value": false
         },
         {
           "id": "detect_mcp23017",
