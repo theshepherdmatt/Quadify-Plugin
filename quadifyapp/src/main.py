@@ -120,15 +120,22 @@ def main():
     volumio_cfg = config.get('volumio', {})
     volumio_host = volumio_cfg.get('host', 'localhost')
     volumio_port = volumio_cfg.get('port', 3000)
-    volumio_listener = VolumioListener(host=volumio_host, port=volumio_port)
 
-    # --- START COMMAND SERVER EARLY with dummy manager for ready loop exit --- #
+    # --- START VolumioListener EARLY with DummyModeManager for ready loop exit --- #
     class DummyModeManager:
+        def __init__(self):
+            self.last_state = None
         def get_mode(self): return None
         def trigger(self, event): pass
+        def process_state_change(self, sender, state, **kwargs):
+            # Just buffer the last state seen
+            self.last_state = state
 
     dummy_mode_manager = DummyModeManager()
+    volumio_listener = VolumioListener(host=volumio_host, port=volumio_port)
+    volumio_listener.mode_manager = dummy_mode_manager
 
+    # --- Setup RotaryControl for early ready exit --- #
     def on_button_press_inner():
         if not ready_stop_event.is_set():
             ready_stop_event.set()
@@ -329,16 +336,21 @@ def main():
 
     threading.Thread(target=set_min_loading_event, daemon=True).start()
 
-    # On Volumio state change: set events, also handle ready_stop_event if playing
     def on_state_changed(sender, state):
-        logger.info(f"Volumio state changed: {state}")
-        if not ready_stop_event.is_set() and state.get('status') == 'play':
+        logger.info(f"[on_state_changed] State: {state!r}")
+        status = str(state.get('status', '???')).lower()
+        logger.info(f"[on_state_changed] Detected status: {status}")
+        # Buffer state in dummy mode manager for handoff after ready loop
+        if hasattr(volumio_listener.mode_manager, "process_state_change"):
+            volumio_listener.mode_manager.process_state_change(sender, state)
+        if not ready_stop_event.is_set() and status == 'play':
             logger.info("Detected playback start: stopping ready loop.")
             ready_stop_event.set()
-        if state.get('status') in ['play', 'stop', 'pause', 'unknown'] and not volumio_ready_event.is_set():
+        if status in ['play', 'stop', 'pause', 'unknown'] and not volumio_ready_event.is_set():
             volumio_ready_event.set()
 
     volumio_listener.state_changed.connect(on_state_changed)
+    logger.info("Bound on_state_changed to volumio_listener.state_changed")
 
     # --- Wait for both loading events then run Ready GIF ---
     logger.info("Waiting for Volumio readiness & min load time.")
@@ -395,12 +407,27 @@ def main():
     manager_factory.setup_mode_manager()
     volumio_listener.mode_manager = mode_manager
 
-    current_state = volumio_listener.get_current_state()
-    if current_state and current_state.get("status") == "play":
-        mode_manager.process_state_change(volumio_listener, current_state)
-    else:
-        mode_manager.trigger("to_menu")
-    logger.info("Startup mode determined from current Volumio state.")
+    # --- Handoff buffered state from DummyModeManager if available ---
+    if hasattr(dummy_mode_manager, 'last_state') and dummy_mode_manager.last_state:
+        logger.info("Handing off last Volumio state from DummyModeManager to real ModeManager")
+        mode_manager.process_state_change(volumio_listener, dummy_mode_manager.last_state)
+        status = dummy_mode_manager.last_state.get("status", "").lower()
+        service = dummy_mode_manager.last_state.get("service", "").lower()
+        display_mode = mode_manager.config.get("display_mode", "original")
+        if status == "play":
+            if service == "webradio":
+                mode_manager.trigger("to_webradio")
+            elif display_mode == "modern":
+                mode_manager.trigger("to_modern")
+            elif display_mode == "minimal":
+                mode_manager.trigger("to_minimal")
+            else:
+                mode_manager.trigger("to_original")
+        elif status in ["pause", "stop"]:
+            mode_manager.trigger("to_clock")
+        else:
+            mode_manager.trigger("to_menu")
+
 
     # --- Restart command server with full manager for runtime control ---
     threading.Thread(
@@ -520,4 +547,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
