@@ -15,15 +15,9 @@
       },
       "saveButton": {
         "label": "Apply",
-        "data": ["enableQuadify", "enableButtonsLED", "enableIR", "enableCava"]
+        "data": ["enableButtonsLED", "enableIR", "enableCava"]
       },
       "content": [
-        {
-          "id": "enableQuadify",
-          "element": "switch",
-          "label": "Enable Quadify Service",
-          "value": true
-        },
         {
           "id": "enableButtonsLED",
           "element": "switch",
