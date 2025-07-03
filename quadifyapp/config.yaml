@@ -187,9 +187,8 @@ quadifyapp:
         /data/plugins/music_service/quadify/quadifyapp/src/assets/images/menus/screensaversettings.png
       - >-
         /data/plugins/music_service/quadify/quadifyapp/src/assets/images/menus/airplay.png
-  mcp23017_address: 32
   logging:
     level: DEBUG
     log_file: /data/plugins/music_service/quadify/quadifyapp/quadifyclean.log
     log_format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-mcp23017_address: '20'
+mcp23017_address: ''

@@ -15,15 +15,20 @@
       },
       "saveButton": {
         "label": "Apply",
-        "data": ["enableButtonsLED", "enableIR", "enableCava"]
+        "data": [
+          "enableIR",
+          "enableCava",
+          "display_mode",
+          "clock_font_key",
+          "show_seconds",
+          "show_date",
+          "screensaver_enabled",
+          "screensaver_type",
+          "screensaver_timeout",
+          "oled_brightness"
+        ]
       },
       "content": [
-        {
-          "id": "enableButtonsLED",
-          "element": "switch",
-          "label": "Enable Buttons & LEDs",
-          "value": false
-        },
         {
           "id": "enableIR",
           "element": "switch",
@@ -35,13 +40,82 @@
           "element": "switch",
           "label": "Enable CAVA Visualizer",
           "value": false
+        },
+        {
+          "id": "display_mode",
+          "element": "select",
+          "label": "Display Mode",
+          "options": [
+            { "label": "Modern", "value": "modern" },
+            { "label": "Original", "value": "original" },
+            { "label": "Minimal", "value": "minimal" }
+          ],
+          "value": "modern"
+        },
+        {
+          "id": "clock_font_key",
+          "element": "select",
+          "label": "Clock Font",
+          "options": [
+            { "label": "Sans", "value": "clock_sans" },
+            { "label": "Dots", "value": "clock_dots" },
+            { "label": "Digital", "value": "clock_digital" },
+            { "label": "Bold", "value": "clock_bold" }
+          ],
+          "value": "clock_sans"
+        },
+        {
+          "id": "show_seconds",
+          "element": "switch",
+          "label": "Show Seconds on Clock",
+          "value": false
+        },
+        {
+          "id": "show_date",
+          "element": "switch",
+          "label": "Show Date on Clock",
+          "value": false
+        },
+        {
+          "id": "screensaver_enabled",
+          "element": "switch",
+          "label": "Enable Screensaver",
+          "value": true
+        },
+        {
+          "id": "screensaver_type",
+          "element": "select",
+          "label": "Screensaver Type",
+          "options": [
+            { "label": "Geo", "value": "geo" },
+            { "label": "Snake", "value": "snake" },
+            { "label": "Bouncing Text", "value": "bouncing_text" }
+          ],
+          "value": "geo"
+        },
+        {
+          "id": "screensaver_timeout",
+          "element": "input",
+          "type": "number",
+          "label": "Screensaver Timeout (seconds)",
+          "value": 3600
+        },
+        {
+          "id": "oled_brightness",
+          "element": "input",
+          "type": "number",
+          "label": "OLED Brightness",
+          "min": 0,
+          "max": 255,
+          "step": 1,
+          "value": 255
         }
       ]
     },
     {
       "id": "mcp23017_config",
       "element": "section",
-      "label": "MCP23017 I2C Address",
+      "label": "MCP23017 I2C Address & Buttons/LEDs",
       "icon": "fa-microchip",
       "onSave": {
         "type": "controller",
@@ -50,9 +124,15 @@
       },
       "saveButton": {
         "label": "Save Address",
-        "data": ["mcp23017_address"]
+        "data": ["enableButtonsLED", "mcp23017_address"]
       },
       "content": [
+        {
+          "id": "enableButtonsLED",
+          "element": "switch",
+          "label": "Enable Buttons & LEDs",
+          "value": false
+        },
         {
           "id": "mcp23017_address",
           "element": "input",
@@ -69,6 +149,25 @@
             "type": "plugin",
             "endpoint": "music_service/quadify",
             "method": "autoDetectMCP"
+          }
+        }
+      ]
+    },
+    {
+      "id": "restart_section",
+      "element": "section",
+      "label": "Restart Service",
+      "icon": "fa-redo",
+      "content": [
+        {
+          "id": "restart_quadify",
+          "element": "button",
+          "label": "Restart Quadify",
+          "doc": "Restarts the Quadify service/plugin.",
+          "onClick": {
+            "type": "controller",
+            "endpoint": "music_service/quadify",
+            "method": "restartQuadify"
           }
         }
       ]

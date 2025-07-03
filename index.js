@@ -7,6 +7,7 @@ const path   = require('path');
 const exec   = require('child_process').exec;
 const Vconf  = require('v-conf');
 
+
 function ControllerQuadify(context) {
   this.context       = context;
   this.commandRouter = context.coreCommand;
@@ -15,6 +16,21 @@ function ControllerQuadify(context) {
 
   // YAML file that the Python side (or shell scripts) may also read
   this.configYamlPath = path.join(__dirname, 'quadifyapp', 'config.yaml');
+}
+
+// --- ADD THESE HELPER FUNCTIONS & PATH HERE ---
+const preferencePath = path.join(__dirname, 'quadifyapp', 'src', 'preference.json');
+
+function loadPreference() {
+  try {
+    return fs.readJsonSync(preferencePath);
+  } catch (e) {
+    return {}; // default if file doesn't exist
+  }
+}
+
+function savePreference(data) {
+  fs.writeJsonSync(preferencePath, data, { spaces: 2 });
 }
 
 // Called on Volumio start to load persistent JSON config
@@ -68,17 +84,35 @@ ControllerQuadify.prototype.getUIConfig = function () {
   return defer.promise;
 };
 
+function extractValue(val) {
+  if (val && typeof val === 'object' && 'value' in val) {
+    return val.value;
+  }
+  return val;
+}
+
 ControllerQuadify.prototype.setUIConfig = function (data) {
-  // Make sure field names match UIConfig.json!
+  this.logger.info('[Quadify] setUIConfig called with: ' + JSON.stringify(data));
   this.config.set('enableCava',       logicValue(data.enableCava));
   this.config.set('enableButtonsLED', logicValue(data.enableButtonsLED));
   this.config.set('enableIR',         logicValue(data.enableIR));
   this.config.set('mcp23017_address', data.mcp23017_address);
 
+  // Update preference.json too!
+  const pref = loadPreference();
+  pref.cava_enabled         = logicValue(data.enableCava);
+  pref.display_mode         = extractValue(data.display_mode);        
+  pref.clock_font_key       = extractValue(data.clock_font_key);     
+  pref.show_seconds         = logicValue(data.show_seconds);
+  pref.show_date            = logicValue(data.show_date);
+  pref.screensaver_enabled  = logicValue(data.screensaver_enabled);
+  pref.screensaver_type     = extractValue(data.screensaver_type);    
+  pref.screensaver_timeout  = parseInt(data.screensaver_timeout, 10);
+  pref.oled_brightness      = parseInt(data.oled_brightness, 10);
+  savePreference(pref);
+
   // Feedback
   this.commandRouter.pushToastMessage('success', 'Settings Saved', 'Quadify settings updated.');
-
-  // Return a Promise
   return Promise.resolve({});
 };
 
@@ -88,6 +122,23 @@ function logicValue(val) {
   if (typeof val === 'string') return val === 'true';
   return !!val;
 }
+
+ControllerQuadify.prototype.restartQuadify = function () {
+  const self = this;
+  self.logger.info('[Quadify] Restart requested via UI.');
+  // You can use systemctl, or the built-in plugin restart if you prefer
+  return libQ.nfcall(exec, 'sudo systemctl restart quadify.service')
+    .then(() => {
+      self.commandRouter.pushToastMessage('success', 'Quadify', 'Quadify service restarted.');
+      return {};
+    })
+    .fail((err) => {
+      self.logger.error('[Quadify] Failed to restart quadify.service: ' + err.message);
+      self.commandRouter.pushToastMessage('error', 'Quadify', 'Failed to restart Quadify service.');
+      throw err;
+    });
+};
+
 
 ControllerQuadify.prototype.controlService = function (service, enable) {
   const action = enable ? 'start' : 'stop';
@@ -119,51 +170,79 @@ ControllerQuadify.prototype.applyAllServiceToggles = function () {
   ]);
 };
 
+ControllerQuadify.prototype.updateMcpConfig = function (data) {
+  let addr = data.mcp23017_address;
+  if (addr && !addr.startsWith('0x')) {
+    addr = '0x' + addr;
+  }
+
+  // Update quadifyapp config.yaml for Python backend
+  const cfg = this.loadConfigYaml();
+  cfg.mcp23017_address = addr;
+  this.saveConfigYaml(cfg);
+
+  // Also update plugin config.json so UI and logic see same value
+  this.config.set('mcp23017_address', addr);
+
+  this.commandRouter.pushToastMessage(
+    'success', 'Quadify', `MCP23017 address saved: ${addr}`
+  );
+  return libQ.resolve();
+};
+
 ControllerQuadify.prototype.autoDetectMCP = function () {
   const defer = libQ.defer();
 
   exec('i2cdetect -y 1', (err, stdout) => {
     if (err) {
-      this.commandRouter.pushToastMessage(
-        'error', 'Quadify', 'i2cdetect failed'
-      );
+      this.commandRouter.pushToastMessage('error', 'Quadify', 'i2cdetect failed');
       return defer.reject(err);
     }
 
-    const m = stdout.match(/\b(20|21|22|23|24|25|26|27)\b/);
-    if (!m) {
-      this.commandRouter.pushToastMessage(
-        'error', 'Quadify', 'No MCP23017 found'
-      );
-      return defer.reject(new Error('not found'));
+    const lines = stdout.split('\n').slice(1); // skip header line
+    let foundAddr = null;
+
+    for (const line of lines) {
+      const parts = line.trim().split(/\s+/);
+      const row = parts[0].replace(':', '');
+      for (let i = 1; i < parts.length; i++) {
+        if (parts[i] !== '--') {
+          // Calculate full address by adding row + column index
+          foundAddr = '0x' + (parseInt(row, 16) + (i - 1)).toString(16);
+          break;
+        }
+      }
+      if (foundAddr) break;
     }
 
-    const addr = '0x' + m[0];
+    if (!foundAddr) {
+      this.commandRouter.pushToastMessage('error', 'Quadify', 'No MCP23017 board detected');
 
-    // Update YAML config
+      // Clear address in configs
+      const cfg = this.loadConfigYaml();
+      cfg.mcp23017_address = '';
+      this.saveConfigYaml(cfg);
+      this.config.set('mcp23017_address', '');
+
+      return defer.resolve();
+    }
+
+    // Save detected address to config.yaml
     const cfg = this.loadConfigYaml();
-    cfg.mcp23017_address = addr;
+    cfg.mcp23017_address = foundAddr;
     this.saveConfigYaml(cfg);
 
-    this.commandRouter.pushToastMessage(
-      'success', 'Quadify', 'Detected MCP23017 at ' + addr
-    );
-    defer.resolve({ mcp23017_address: addr });
+    // Update plugin config.json too
+    this.config.set('mcp23017_address', foundAddr);
+
+    this.commandRouter.pushToastMessage('success', 'Quadify', 'Detected MCP23017 at ' + foundAddr);
+    defer.resolve({ mcp23017_address: foundAddr });
   });
 
   return defer.promise;
 };
 
-ControllerQuadify.prototype.updateMcpConfig = function (data) {
-  const cfg = this.loadConfigYaml();
-  cfg.mcp23017_address = data.mcp23017_address;
-  this.saveConfigYaml(cfg);
 
-  this.commandRouter.pushToastMessage(
-    'success', 'Quadify', 'MCP23017 address saved'
-  );
-  return libQ.resolve();
-};
 
 // Stub handlers—fill these out as you add UI fields
 ControllerQuadify.prototype.updateRotaryConfig = function () { return libQ.resolve(); };

@@ -1,6 +1,6 @@
 {
   "enabled": true,
-  "mcp23017_address": "0x20",
+  "mcp23017_address": "",
   "rotary_enabled": false,
   "clk_pin": 13,
   "dt_pin": 5,
