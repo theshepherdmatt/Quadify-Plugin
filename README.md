@@ -4,7 +4,7 @@
 
 * Advanced OLED SPI 1322 display with Now Playing info, album art, menus, screensavers, system status, and more
 * Rotary encoder support for volume, track navigation, and menu scrolling
-* MCP23017 I²C button and LED matrix support for full customizable controls
+* MCP23017 I²C button and LED matrix support for full customisable controls
 * IR remote control compatibility with popular remotes
 * Seamless integration with Volumio's plugin system — clean startup/shutdown, systemd services, and native plugin paths
 
@@ -41,7 +41,7 @@ sudo mkdir -p /data/plugins/music_service \
 * **No SSH keys required for public repo**
 * Prints **"Quadify installation complete"** when done.
 
-> **Reboot after install for hardware and services to initialize.
+> **Reboot after install for hardware and services to initialise.
 > Configure via Volumio’s Web UI in Plugins → Installed Plugins → Quadify.**
 
 ---
