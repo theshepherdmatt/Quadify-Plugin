@@ -69,15 +69,19 @@ ControllerQuadify.prototype.getUIConfig = function () {
 };
 
 ControllerQuadify.prototype.setUIConfig = function (data) {
-  // Persist settings via v-conf
-  this.config.set('enableQuadify',    logicValue(data.enableQuadify));
+  // Make sure field names match UIConfig.json!
   this.config.set('enableCava',       logicValue(data.enableCava));
   this.config.set('enableButtonsLED', logicValue(data.enableButtonsLED));
   this.config.set('enableIR',         logicValue(data.enableIR));
   this.config.set('mcp23017_address', data.mcp23017_address);
 
-  return this.applyAllServiceToggles();
+  // Feedback
+  this.commandRouter.pushToastMessage('success', 'Settings Saved', 'Quadify settings updated.');
+
+  // Return a Promise
+  return Promise.resolve({});
 };
+
 
 /** Casts “false”, false, 0 → false; everything else → true */
 function logicValue(val) {
@@ -100,10 +104,6 @@ ControllerQuadify.prototype.controlService = function (service, enable) {
 
 ControllerQuadify.prototype.applyAllServiceToggles = function () {
   return libQ.all([
-    this.controlService(
-      'quadify',
-      logicValue(this.config.get('enableQuadify'))
-    ),
     this.controlService(
       'cava',
       logicValue(this.config.get('enableCava'))
@@ -188,4 +188,3 @@ ControllerQuadify.prototype.saveConfigYaml = function (cfg) {
 };
 
 module.exports = ControllerQuadify;
-

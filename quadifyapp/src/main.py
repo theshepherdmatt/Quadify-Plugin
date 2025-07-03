@@ -49,38 +49,6 @@ def load_config(config_path='/config.yaml'):
         logging.warning(f"Config file {config_path} not found. Using default configuration.")
     return config
     
-FIRST_RUN_FLAG = '/data/quadify_first_run_done'
-
-def has_seen_ready():
-    """Returns True if user has already seen the ready_new screen."""
-    return os.path.exists(FIRST_RUN_FLAG)
-
-def set_has_seen_ready():
-    """Creates the flag file to record that the ready_new screen was shown."""
-    try:
-        os.makedirs(os.path.dirname(FIRST_RUN_FLAG), exist_ok=True)
-        with open(FIRST_RUN_FLAG, 'w') as f:
-            f.write("shown")
-    except Exception as e:
-        print(f"Could not create first-run flag file: {e}")
-
-def is_first_run():
-    netconfigured = os.path.exists('/data/configuration/netconfigured')
-    network_configs = glob.glob('/data/configuration/music_service/network/*.json')
-    return not (netconfigured and network_configs)
-
-def is_network_online(host="8.8.8.8", port=53, timeout=3):
-    """
-    Returns True if the device can reach an external server (default: Google's DNS).
-    This is a strong signal that the device is on Wi-Fi with internet access.
-    """
-    try:
-        socket.setdefaulttimeout(timeout)
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.connect((host, port))
-        return True
-    except Exception:
-        return False
 
 def show_gif_loop(gif_path, stop_condition, display_manager, logger):
     """Displays an animated GIF in a loop until stop_condition() returns True."""
@@ -121,40 +89,7 @@ def main():
     display_config = config.get('quadifyapp', {}).get('display', {})
 
     # --- DisplayManager ---
-    display_manager = DisplayManager(display_config)
-
-    # --- First Run: Show Network Setup GIFs ---
-    if is_first_run():
-        connecting_gif = display_config.get('connecting_path', 'connecting.gif')
-        connected_gif = display_config.get('connected_path', 'connected.gif')
-
-        logger.info("First run detected. Showing 'connecting' GIF until network is up.")
-
-        show_gif_loop(
-            connecting_gif,
-            lambda: is_network_online(),
-            display_manager,
-            logger
-        )
-
-        logger.info("Network connected! Showing 'connected' GIF for 2 seconds.")
-        show_gif_loop(
-            connected_gif,
-            lambda: True,
-            display_manager,
-            logger
-        )
-        time.sleep(2)
-        
-    # --- Determine which ready GIF to show first ---
-    if not has_seen_ready():
-        first_ready_path = display_config.get('ready_new_path', 'ready_new.gif')
-        logger.info("Showing 'ready_new.gif' for new user.")
-        is_first_time_user = True
-    else:
-        first_ready_path = display_config.get('ready_gif_path', 'ready.gif')
-        logger.info("Showing 'ready.gif' for returning user.")
-        is_first_time_user = False
+    display_manager = DisplayManager(display_config)    
 
     import smbus2
 
@@ -411,8 +346,6 @@ def main():
     min_loading_event.wait()
     logger.info("Volumio is ready & min loading time passed, proceeding to ready GIF.")
 
-    show_gif_loop(first_ready_path, lambda: True, display_manager, logger)
-
     # --- Ready loop that waits for button/remote/playback to set ready_stop_event ---
     def show_ready_gif_until_event(stop_event, gif_path):
         try:
@@ -438,9 +371,6 @@ def main():
     ).start()
     ready_stop_event.wait()
     logger.info("Ready GIF exited, continuing to UI startup.")
-
-    if is_first_time_user:
-        set_has_seen_ready()
 
     # --- Now the main UI, ModeManager, screens, etc ---
     clock_config = config.get('clock', {})
@@ -590,3 +520,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
