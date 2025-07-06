@@ -191,4 +191,4 @@ quadifyapp:
     level: DEBUG
     log_file: /data/plugins/music_service/quadify/quadifyapp/quadifyclean.log
     log_format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-mcp23017_address: ''
+mcp23017_address: '0x20'

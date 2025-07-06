@@ -1,11 +1,9 @@
 [Unit]
-Description=CAVA – Console-based Audio Visualizer
+Description=CAVA - Console-based Audio Visualizer (Quadify Plugin)
 After=sound.target
 
 [Service]
-Type=simple
-WorkingDirectory=/data/plugins/music_service/quadify/cava
-ExecStart=/usr/local/bin/cava -p /data/plugins/music_service/quadify/cava/config/default_config
+ExecStart=/data/plugins/music_service/quadify/cava/bin/cava -p /data/plugins/music_service/quadify/cava/config/default_config
 Restart=always
 RestartSec=3
 User=volumio

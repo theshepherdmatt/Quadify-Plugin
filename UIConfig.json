@@ -109,7 +109,7 @@
       "id": "ir_remote_section",
       "element": "section",
       "label": "IR Remote Control",
-      "icon": "fa-remote-control",
+      "icon": "fa-remote",
       "onSave": {
         "type": "controller",
         "endpoint": "music_service/quadify",
@@ -117,7 +117,7 @@
       },
       "saveButton": {
         "label": "Apply",
-        "data": ["enableIR"]
+        "data": ["enableIR", "ir_remote_select"]
       },
       "content": [
         {
@@ -125,6 +125,13 @@
           "element": "switch",
           "label": "Enable IR Remote",
           "value": false
+        },
+        {
+          "id": "ir_remote_select",
+          "element": "select",
+          "label": "Remote Profile",
+          "options": [],
+          "value": ""
         }
       ]
     },
@@ -144,17 +151,17 @@
       },
       "content": [
         {
+          "id": "enableButtonsLED",
+          "element": "switch",
+          "label": "Enable Buttons & LEDs",
+          "value": false
+        },
+        {
           "id": "mcp23017_address",
           "element": "input",
           "type": "text",
           "label": "I2C Address (e.g. 0x20)",
           "value": ""
-        },
-        {
-          "id": "enableButtonsLED",
-          "element": "switch",
-          "label": "Enable Buttons & LEDs",
-          "value": false
         },
         {
           "id": "detect_mcp23017",
