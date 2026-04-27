@@ -424,6 +424,20 @@ install_unit_from_template_or_simple \
   "quadifyapp" \
   "/usr/bin/python3 $PLUGIN_DIR/quadifyapp/src/main.py"
 
+# quadify-splash.service — ultra-early OLED splash (Type=oneshot, sysinit.target)
+install_unit_from_template_or_simple \
+  "quadify-splash.service" \
+  "Quadify ultra-early OLED splash" \
+  "-" \
+  "/usr/bin/python3 $PLUGIN_DIR/quadifyapp/src/splash.py"
+
+# quadify-icon-fetch.service — oneshot icon refresh, not enabled (no [Install] section)
+install_unit_from_template_or_simple \
+  "quadify-icon-fetch.service" \
+  "Quadify icon fetcher" \
+  "quadifyapp" \
+  "/usr/bin/python3 $PLUGIN_DIR/quadifyapp/src/assets/images/convert2.py"
+
 install_unit_from_template_or_simple \
   "quadify-buttonsleds.service" \
   "Quadify Buttons & LEDs" \
@@ -463,6 +477,8 @@ run systemctl daemon-reload
 run systemctl enable --now lircd.service || true
 run systemctl enable --now quadify-lirc-post.service || true
 run systemctl enable --now quadify.service || true
+run systemctl enable quadify-splash.service || true
+run systemctl start quadify-icon-fetch.service || true
 run systemctl disable --now quadify-buttonsleds.service || true
 systemctl disable --now buttonsleds.service >/dev/null 2>&1 || true
 
