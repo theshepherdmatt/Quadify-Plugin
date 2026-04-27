@@ -229,8 +229,9 @@ class MinimalScreen(BaseManager):
         # 4) Draw anti-aliased round progress indicator in bottom-right
         # ------------------------------------------------------------------
         # Retrieve playback position and duration
-        seek_ms = state.get("seek", 0)
-        duration_s = state.get("duration", 1)  # Avoid division by zero
+        # AirPlay sends these as explicit None; `or` keeps division safe.
+        seek_ms = state.get("seek") or 0
+        duration_s = state.get("duration") or 1  # Avoid division by zero
         seek_s = max(0, seek_ms / 1000)
         progress = max(0.0, min(seek_s / duration_s, 1.0))
 

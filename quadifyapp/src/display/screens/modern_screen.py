@@ -362,8 +362,11 @@ class ModernScreen(BaseManager):
         # 2) Core state
         song_title = data.get("title", "Unknown Title")
         artist_name = data.get("artist", "Unknown Artist")
-        seek_ms = data.get("seek", 0)
-        duration_s = max(1, int(data.get("duration", 1)))
+        # AirPlay sends seek/duration as explicit None (key present, value None),
+        # which `dict.get(k, default)` does NOT replace with the default.
+        # Coerce via `or` so int()/division below never see None.
+        seek_ms = data.get("seek") or 0
+        duration_s = max(1, int(data.get("duration") or 1))
         samplerate = data.get("samplerate", "N/A")
         bitdepth = data.get("bitdepth", "N/A")
         volume = data.get("volume", 50)

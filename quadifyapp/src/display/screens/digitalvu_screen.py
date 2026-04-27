@@ -368,8 +368,9 @@ class DigitalVUScreen(BaseManager):
         screen_width, screen_height = self.display_manager.oled.size
 
         # --- Progress bar + time labels ---
-        seek_ms = data.get("seek", 0)
-        duration_s = max(1, int(data.get("duration", 1)))
+        # AirPlay sends seek/duration as explicit None; `or` guards int()/division.
+        seek_ms = data.get("seek") or 0
+        duration_s = max(1, int(data.get("duration") or 1))
         seek_s = max(0, seek_ms / 1000.0)
         progress = max(0.0, min(seek_s / duration_s, 1.0))
 
