@@ -5,7 +5,7 @@ import re
 import threading
 import time
 
-from PIL import Image, ImageDraw, ImageFont, ImageSequence
+from PIL import Image, ImageDraw, ImageFont
 from managers.base_manager import BaseManager  # Or whichever base class your project uses
 
 class OriginalScreen(BaseManager):
@@ -34,10 +34,10 @@ class OriginalScreen(BaseManager):
         self.stop_event = threading.Event()
         self.is_active = False
 
-        # Background update thread
-        self.update_thread = threading.Thread(target=self.update_display_loop, daemon=True)
-        self.update_thread.start()
-        self.logger.info("OriginalScreen: Started background update thread.")
+        # Background update thread is lazy — created on first start_mode().
+        # Avoids 5 idle polling threads spinning forever for screens the
+        # user never visits.
+        self.update_thread = None
 
         # Register a callback for Volumio state changes
         if self.volumio_listener:
@@ -164,8 +164,9 @@ class OriginalScreen(BaseManager):
         else:
             self.logger.warning("OriginalScreen: No current Volumio state to display.")
 
-        # Ensure update thread alive (allows stop/start cycling)
-        if not self.update_thread.is_alive():
+        # Ensure update thread alive (allows stop/start cycling, and handles
+        # the lazy-init case on first activation).
+        if self.update_thread is None or not self.update_thread.is_alive():
             self.stop_event.clear()
             self.update_thread = threading.Thread(target=self.update_display_loop, daemon=True)
             self.update_thread.start()

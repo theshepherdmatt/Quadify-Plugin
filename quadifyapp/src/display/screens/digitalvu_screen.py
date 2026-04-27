@@ -90,9 +90,8 @@ class DigitalVUScreen(BaseManager):
         self.stop_event = threading.Event()
         self.is_active = False
 
-        self.update_thread = threading.Thread(target=self.update_display_loop, daemon=True)
-        self.update_thread.start()
-        self.logger.info("DigitalVUScreen: Started background update thread.")
+        # Display update thread is lazy — created on first start_mode().
+        self.update_thread = None
 
         # ---------------- Volumio listener ----------------
         if self.volumio_listener:
@@ -219,7 +218,7 @@ class DigitalVUScreen(BaseManager):
             self.spectrum_thread.start()
             self.logger.info("DigitalVUScreen: Spectrum reading thread started.")
 
-        if not self.update_thread.is_alive():
+        if self.update_thread is None or not self.update_thread.is_alive():
             self.stop_event.clear()
             self.update_thread = threading.Thread(target=self.update_display_loop, daemon=True)
             self.update_thread.start()

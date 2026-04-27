@@ -10,18 +10,7 @@ volumio:
   connection_timeout: 5
 
 display:
-  default_album_art: /data/plugins/system_hardware/quadify/quadifyapp/src/assets/images/menus/albumart.jpg
-  loading_gif_path: /data/plugins/system_hardware/quadify/quadifyapp/src/assets/images/gif/Loading.gif
-  ready_gif_path: /data/plugins/system_hardware/quadify/quadifyapp/src/assets/images/gif/ready.gif
-  ready_new_path: /data/plugins/system_hardware/quadify/quadifyapp/src/assets/images/gif/ready_new.gif
-  ready_loop_path: /data/plugins/system_hardware/quadify/quadifyapp/src/assets/images/gif/ready_loop.gif
-  connecting_path: /data/plugins/system_hardware/quadify/quadifyapp/src/assets/images/gif/connecting.gif
-  connected_path: /data/plugins/system_hardware/quadify/quadifyapp/src/assets/images/gif/connected.gif
-  updating_path: /data/plugins/system_hardware/quadify/quadifyapp/src/assets/images/gif/updating.gif
-  updatedmessage_path: /data/plugins/system_hardware/quadify/quadifyapp/src/assets/images/gif/updatedmessage.gif
-  screensaver_gif_path: /data/plugins/system_hardware/quadify/quadifyapp/src/assets/images/screensaver/geo.gif
-  logo_path: /data/plugins/system_hardware/quadify/quadifyapp/src/assets/images/gif/logo.gif
-  shutdown_path: /data/plugins/system_hardware/quadify/quadifyapp/src/assets/images/shuttingdown.png
+  logo_path: /data/plugins/system_hardware/quadify/quadifyapp/src/assets/images/pngs/logo.png
   vuscreen_path: /data/plugins/system_hardware/quadify/quadifyapp/src/assets/images/pngs/vuscreen.png
   digitalvuscreen_path: /data/plugins/system_hardware/quadify/quadifyapp/src/assets/images/pngs/digitalvuscreen.png
   rotation: 2

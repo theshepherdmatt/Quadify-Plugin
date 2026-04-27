@@ -29,20 +29,19 @@ def _variants(s):  # same as before
     up = _norm_label(s)
     return list({lo, lo.replace("_", "-"), lo.replace("-", "_"), up})
 
-# Candidate locations (env overrides first, then plugin defaults, then common fallbacks)
+# Candidate locations: env overrides first, then plugin install defaults.
+# (Previous fallbacks to /home/volumio/Quadify/... and a hardcoded duplicate
+# of the plugin path have been removed — they were relics of an old install
+# layout and made path resolution non-deterministic.)
 CANDIDATE_PNG_DIRS = [
     os.environ.get("QUADIFY_ICON_DIR") or os.environ.get("QUADIFY_ASSETS_PNG_DIR"),
     _DEFAULT_PNG_DIR,
-    "/data/plugins/system_hardware/quadify/quadifyapp/src/assets/pngs",
-    "/home/volumio/Quadify/src/assets/pngs",
 ]
 CANDIDATE_PNG_DIRS = [p for p in CANDIDATE_PNG_DIRS if p]
 
 CANDIDATE_MANIFESTS = [
     os.environ.get("QUADIFY_ICON_MANIFEST"),
     _DEFAULT_MANIFEST,
-    "/data/plugins/system_hardware/quadify/quadifyapp/src/assets/icons_manifest.json",
-    "/home/volumio/Quadify/src/assets/icons_manifest.json",
 ]
 CANDIDATE_MANIFESTS = [p for p in CANDIDATE_MANIFESTS if p]
 

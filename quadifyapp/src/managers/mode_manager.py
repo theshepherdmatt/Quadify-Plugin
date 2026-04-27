@@ -97,7 +97,6 @@ class ModeManager:
         self.modern_screen = None
         self.minimal_screen = None
         self.webradio_screen = None
-        self.airplay_screen = None
         self.vu_screen = None
         self.digitalvu_screen = None
         self.screensaver = None
@@ -105,6 +104,12 @@ class ModeManager:
         self.clock_menu = None
         self.system_update_menu = None
         self.radio_manager = None
+
+        # Lazy-load registry: attr_name -> zero-arg factory callable.
+        # Populated by ManagerFactory for screens that are expensive to
+        # construct (loading PIL backgrounds, fonts, etc.). The screen is
+        # only built on first transition into its mode.
+        self._lazy_factories = {}
 
         # Idle/Screensaver logic
         self.idle_timer = None
@@ -122,11 +127,13 @@ class ModeManager:
 
         self.logger.debug(f"ModeManager: idle_timeout={self.idle_timeout}, display_mode={self.config.get('display_mode')}")
 
-        # Set up the state machine
+        # Set up the state machine. Start in 'boot' so the splash isn't
+        # overwritten by enter_clock during construction; main.py drives the
+        # transition out of 'boot' once Volumio's first pushState arrives.
         self.machine = Machine(
             model=self,
             states=ModeManager.states,
-            initial='clock',
+            initial='boot',
             send_event=True
         )
         self._define_transitions()
@@ -285,7 +292,36 @@ class ModeManager:
         return default_preferences
     
 
-    # --- Set References for Other Managers/Screen Objects ---
+    # --- Lazy registration -------------------------------------------------
+    #
+    # Heavy screens (ones that load PIL backgrounds/fonts on construction)
+    # are registered with a factory callable instead of being built eagerly
+    # at boot. _resolve_screen() builds + caches on first request, so a
+    # screen the user never visits never costs anything.
+
+    def register_lazy(self, attr_name, factory_callable):
+        """ManagerFactory calls this for each screen we want lazy-built."""
+        self._lazy_factories[attr_name] = factory_callable
+
+    def _resolve_screen(self, attr_name):
+        """Return the screen at attr_name, building it via the registered
+        factory on first call. Idempotent thereafter."""
+        val = getattr(self, attr_name, None)
+        if val is None:
+            factory = self._lazy_factories.get(attr_name)
+            if factory is not None:
+                try:
+                    val = factory()
+                    setattr(self, attr_name, val)
+                    self.logger.info(f"ModeManager: lazily built {attr_name}.")
+                except Exception as e:
+                    self.logger.error(f"ModeManager: lazy build failed for {attr_name}: {e}")
+                    val = None
+        return val
+
+    # --- Set References for the eagerly-built managers ---
+    # (Lazy-built screens are wired via register_lazy() above; setters for
+    # them have been removed.)
     def set_menu_manager(self, menu_manager):
         self.menu_manager = menu_manager
 
@@ -301,32 +337,8 @@ class ModeManager:
     def set_radio_manager(self, radio_manager):
         self.radio_manager = radio_manager
 
-    def set_original_screen(self, original_screen):
-        self.original_screen = original_screen
-
-    def set_modern_screen(self, modern_screen):
-        self.modern_screen = modern_screen
-
-    def set_minimal_screen(self, minimal_screen):
-        self.minimal_screen = minimal_screen
-
-    def set_vu_screen(self, vu_screen):
-        self.vu_screen = vu_screen
-
-    def set_digitalvu_screen(self, digitalvu_screen):
-        self.digitalvu_screen = digitalvu_screen
-
-    def set_webradio_screen(self, webradio_screen):
-        self.webradio_screen = webradio_screen
-
-    def set_airplay_screen(self, airplay_screen):
-        self.airplay_screen = airplay_screen
-
     def set_clock_menu(self, clock_menu):
         self.clock_menu = clock_menu
-
-    def set_screensaver(self, screensaver):
-        self.screensaver = screensaver
 
     def set_screensaver_menu(self, screensaver_menu):
         self.screensaver_menu = screensaver_menu
@@ -518,57 +530,57 @@ class ModeManager:
     def enter_modern(self, event):
         self.logger.info("ModeManager: Entering 'modern' playback mode.")
         self.stop_all_screens()
-        if self.modern_screen:
-            self.modern_screen.start_mode()
-            self.logger.info("ModeManager: Modern screen started.")
+        screen = self._resolve_screen("modern_screen")
+        if screen:
+            screen.start_mode()
         else:
-            self.logger.warning("ModeManager: No modern_screen set.")
+            self.logger.warning("ModeManager: No modern_screen available.")
         self.update_current_mode()
-        self.cancel_menu_inactivity_timer()  # No timeout on clock
+        self.cancel_menu_inactivity_timer()
 
     def enter_minimal(self, event):
         self.logger.info("ModeManager: Entering 'minimal' playback mode.")
         self.stop_all_screens()
-        if self.minimal_screen:
-            self.minimal_screen.start_mode()
-            self.logger.info("ModeManager: Minimal screen started.")
+        screen = self._resolve_screen("minimal_screen")
+        if screen:
+            screen.start_mode()
         else:
-            self.logger.warning("ModeManager: No minimal_screen set.")
+            self.logger.warning("ModeManager: No minimal_screen available.")
         self.update_current_mode()
-        self.cancel_menu_inactivity_timer()  # No timeout on clock
-        
+        self.cancel_menu_inactivity_timer()
+
     def enter_original(self, event):
         self.logger.info("ModeManager: Entering 'original' playback mode.")
         self.stop_all_screens()
-        if self.original_screen:
-            self.original_screen.start_mode()
-            self.logger.info("ModeManager: Original screen started.")
+        screen = self._resolve_screen("original_screen")
+        if screen:
+            screen.start_mode()
         else:
-            self.logger.warning("ModeManager: No original_screen set.")
+            self.logger.warning("ModeManager: No original_screen available.")
         self.update_current_mode()
-        self.cancel_menu_inactivity_timer()  # No timeout on clock
+        self.cancel_menu_inactivity_timer()
 
     def enter_vuscreen(self, event):
         self.logger.info("ModeManager: Entering 'vuscreen' playback mode.")
         self.stop_all_screens()
-        if self.vu_screen:
-            self.vu_screen.start_mode()
-            self.logger.info("ModeManager: VU screen started.")
+        screen = self._resolve_screen("vu_screen")
+        if screen:
+            screen.start_mode()
         else:
-            self.logger.warning("ModeManager: No vu_screen set.")
+            self.logger.warning("ModeManager: No vu_screen available.")
         self.update_current_mode()
-        self.cancel_menu_inactivity_timer()  # No timeout on clock
+        self.cancel_menu_inactivity_timer()
 
     def enter_digitalvuscreen(self, event):
         self.logger.info("ModeManager: Entering 'digitalvuscreen' playback mode.")
         self.stop_all_screens()
-        if self.digitalvu_screen:
-            self.digitalvu_screen.start_mode()
-            self.logger.info("ModeManager: DigitalVU screen started.")
+        screen = self._resolve_screen("digitalvu_screen")
+        if screen:
+            screen.start_mode()
         else:
-            self.logger.warning("ModeManager: No digitalvu_screen set.")
+            self.logger.warning("ModeManager: No digitalvu_screen available.")
         self.update_current_mode()
-        self.cancel_menu_inactivity_timer()  # No timeout on clock
+        self.cancel_menu_inactivity_timer()
     
     # --- Menu Managers ---
 
@@ -593,13 +605,13 @@ class ModeManager:
     def enter_screensaver(self, event):
         self.logger.info("ModeManager: Entering 'screensaver' state.")
         self.stop_all_screens()
-        if self.screensaver:
-            self.screensaver.start_screensaver()
-            self.logger.info("ModeManager: Screensaver started.")
+        screen = self._resolve_screen("screensaver")
+        if screen:
+            screen.start_screensaver()
         else:
-            self.logger.warning("ModeManager: screensaver is None.")
+            self.logger.warning("ModeManager: No screensaver available.")
         self.update_current_mode()
-        self.cancel_menu_inactivity_timer()  # No timeout on clock
+        self.cancel_menu_inactivity_timer()
 
     def enter_screensavermenu(self, event):
         self.logger.info("ModeManager: Entering 'screensavermenu' state.")
@@ -708,13 +720,13 @@ class ModeManager:
     def enter_webradio(self, event):
         self.logger.info("ModeManager: Entering 'webradio' state.")
         self.stop_all_screens()
-        if self.webradio_screen:
-            self.webradio_screen.start_mode()
-            self.logger.info("ModeManager: WebRadioScreen started.")
+        screen = self._resolve_screen("webradio_screen")
+        if screen:
+            screen.start_mode()
         else:
-            self.logger.warning("ModeManager: No webradio_screen set.")
+            self.logger.warning("ModeManager: No webradio_screen available.")
         self.update_current_mode()
-        self.cancel_menu_inactivity_timer()  # No timeout on clock
+        self.cancel_menu_inactivity_timer()
 
     def enter_playlists(self, event):
         self.logger.info("ModeManager: Entering 'playlist' state.")
@@ -896,10 +908,20 @@ class ModeManager:
             self.logger.debug("ModeManager: Skipping a rapid mode switch due to cooldown.")
             return
 
-        # Ignore AirPlay services (stay in clock)
-        if service in ["airplay", "airplay_emulation"]:
-            self.logger.debug("AirPlay service detected; ignoring state update and remaining in clock mode.")
-            return
+        # AirPlay routing.
+        # When ignore_airplay=True (legacy default for users who don't want
+        # the screen to flip on every iPhone "discovered me" beacon), the
+        # state update is dropped and we stay in clock. When False, AirPlay
+        # is treated like any other playback service and falls through to
+        # the normal target-mode selection below — meaning whichever
+        # playback screen the user has configured will render the AirPlay
+        # state (title / artist / album / volume) the same way it renders
+        # MPD or Spotify state. No dedicated airplay_screen needed.
+        if service in ("airplay", "airplay_emulation"):
+            if self.config.get("ignore_airplay", False):
+                self.logger.debug("AirPlay ignored per ignore_airplay preference.")
+                return
+            self.logger.debug("AirPlay routed through normal playback handling.")
 
         if status == "play":
             # Decide target mode

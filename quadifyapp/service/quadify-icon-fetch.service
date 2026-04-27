@@ -1,0 +1,20 @@
+[Unit]
+Description=Quadify icon fetcher (refresh menu icons from Volumio)
+# Run only when Volumio's HTTP API is up. We don't enable this unit by
+# default — it's manual / triggered by the plugin install hook — so this
+# After= block is just for ordering when someone does run it.
+After=volumio.service network-online.target
+Wants=volumio.service
+
+[Service]
+Type=oneshot
+User=volumio
+WorkingDirectory=/data/plugins/system_hardware/quadify/quadifyapp
+ExecStart=/usr/bin/python3 /data/plugins/system_hardware/quadify/quadifyapp/src/assets/images/convert2.py
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=120
+
+# Intentionally no [Install] section — this unit is not enabled by default.
+# To run on demand:   sudo systemctl start quadify-icon-fetch.service
+# To inspect output:  journalctl -u quadify-icon-fetch.service -n 100
