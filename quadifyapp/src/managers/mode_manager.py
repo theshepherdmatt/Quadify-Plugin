@@ -119,7 +119,19 @@ class ModeManager:
         self.current_status = None
         self.previous_status = None
         self.pause_stop_timer = None
-        self.pause_stop_delay = 1.5
+        # Was 1.5s — too short to outlast AirPlay's keepalive flicker
+        # (Apple bounces status:play within ~70ms of a pause and keeps
+        # spamming play events for 5+ seconds to keep the audio pipe open).
+        self.pause_stop_delay = 5.0
+        # Pause-pending tracks "we've seen a pause and haven't confirmed unpause".
+        # Independent from self.current_status, which gets clobbered on every
+        # spam pushState event from AirPlay.
+        self._pause_pending = False
+        self._last_pause_time = 0.0
+        # After a pause, ignore "play" events that arrive within this window —
+        # AirPlay's immediate flicker preserves the title so it looks real
+        # even when it isn't.
+        self._airplay_flicker_window = 3.0
 
         self.first_state_handoff = True  # New flag
 
@@ -897,6 +909,32 @@ class ModeManager:
         # in-app suppression preference.
 
         if status == "play":
+            # AirPlay keepalive: status=play with empty title is the OS keeping
+            # the audio pipe open, NOT actual playback. Never let it cancel a
+            # pending pause and never let it drive a mode transition.
+            title = (state_data.get("title") or "").strip()
+            is_airplay = service in ("airplay", "airplay_emulation")
+            if is_airplay and not title:
+                self.logger.debug("AirPlay keepalive (status=play, empty title); ignoring.")
+                return
+
+            # Real-looking play. Only clear pause-pending once we're outside
+            # the AirPlay flicker window (Apple bounces play within ~70ms of a
+            # pause but with title preserved — looks identical to real unpause).
+            if self._pause_pending:
+                elapsed = now - self._last_pause_time
+                if not is_airplay or elapsed >= self._airplay_flicker_window:
+                    self.logger.info(
+                        "Real play %.2fs after pause; cancelling pending pause.",
+                        elapsed,
+                    )
+                    self._cancel_pause_timer()
+                else:
+                    self.logger.debug(
+                        "Play within AirPlay flicker window (%.2fs < %.1fs); pause_pending preserved.",
+                        elapsed, self._airplay_flicker_window,
+                    )
+
             # Decide target mode
             if service == "webradio":
                 target_mode = "webradio"
@@ -927,30 +965,39 @@ class ModeManager:
 
 
     def _start_pause_timer(self):
+        # Mark pause as pending; this flag is independent of self.current_status
+        # so AirPlay's spam play events don't silently clear it.
+        self._pause_pending = True
+        self._last_pause_time = time.time()
         if not self.pause_stop_timer:
             self.pause_stop_timer = threading.Timer(
                 self.pause_stop_delay,
                 self.switch_to_clock_if_still_stopped_or_paused
             )
             self.pause_stop_timer.start()
-            self.logger.debug("ModeManager: Started pause/stop timer.")
+            self.logger.info("Started pause/stop timer (%.1fs).", self.pause_stop_delay)
         else:
-            self.logger.debug("ModeManager: Pause/stop timer already running.")
+            self.logger.debug("Pause/stop timer already running; pause_pending re-armed.")
 
     def _cancel_pause_timer(self):
+        self._pause_pending = False
         if self.pause_stop_timer:
             self.pause_stop_timer.cancel()
             self.pause_stop_timer = None
-            self.logger.debug("ModeManager: Canceled pause/stop timer.")
+            self.logger.info("Cancelled pause/stop timer.")
 
     def switch_to_clock_if_still_stopped_or_paused(self):
         with self.lock:
-            if self.current_status in ["pause", "stop"]:
+            if self._pause_pending:
+                self.logger.info(
+                    "Pause sustained for %.1fs; reverting to clock.",
+                    self.pause_stop_delay,
+                )
                 self.to_clock()
-                self.logger.debug("ModeManager: Reverted to clock after pause/stop timer.")
             else:
-                self.logger.debug("Playback resumed or changed; staying in current mode.")
+                self.logger.debug("Pause cleared before timer fired; staying in current mode.")
             self.pause_stop_timer = None
+            self._pause_pending = False
 
     def update_current_mode(self):
         try:
