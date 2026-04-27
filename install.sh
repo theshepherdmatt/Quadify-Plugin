@@ -87,7 +87,7 @@ install_cava_from_fork() {
   run rm -rf "$BUILD" "$PREFIX"
 
   run apt-get $APT_OPTS install \
-    git libfftw3-dev libasound2-dev libncursesw5-dev libpulse-dev \
+    git libfftw3-dev libasound2-dev libncurses-dev \
     libtool automake autoconf gcc make pkg-config libiniparser-dev
 
   run git clone --depth 1 "$REPO" "$BUILD"
@@ -205,7 +205,7 @@ run apt-get $APT_OPTS install \
   libxml2-dev libxslt1-dev libssl-dev \
   python3-gi python3-cairo gir1.2-gtk-3.0 \
   pkg-config \
-  libopenjp2-7 libtiff6 liblcms2-dev libwebp-dev \
+  libopenjp2-7 libtiff-dev liblcms2-dev libwebp-dev \
   libcurl4-openssl-dev \
   python3-rpi.gpio \
   python3-pycurl
@@ -425,10 +425,10 @@ install_unit_from_template_or_simple \
   "/usr/bin/python3 $PLUGIN_DIR/quadifyapp/src/main.py"
 
 install_unit_from_template_or_simple \
- "quadify-buttonsleds.service" \
+  "quadify-buttonsleds.service" \
   "Quadify Buttons & LEDs" \
   "-" \
-  "/usr/bin/python3 /data/plugins/system_hardware/quadify/quadifyapp/scripts/buttonsleds_daemon.py"
+  "/usr/bin/python3 $PLUGIN_DIR/quadifyapp/scripts/buttonsleds_daemon.py"
 
 # ir_listener.service (if script exists)
 if [ -f "$PLUGIN_DIR/quadifyapp/src/hardware/ir_listener.py" ]; then

@@ -10,13 +10,13 @@
   "icon": "fa-cogs",
   "isManuallyInstalled": true,
 
-  "volumio_version": ">=3.569",
+  "volumio_version": ">=4",
 
-  "node": ">=16",
+  "node": ">=18",
 
-  "os": ["bookworm", "bullseye"],
+  "os": ["bookworm"],
 
-  "architecture": ["armhf"],
+  "architecture": ["armhf", "arm64"],
 
   "uninstall_script": "uninstall.js"
 }

@@ -13,7 +13,7 @@ It provides seamless support for OLED displays, rotary encoders, buttons, and LE
 
 ## Requirements
 
-* A Raspberry Pi running **Volumio 3 or later**
+* A Raspberry Pi running **Volumio 4** (Bookworm-based)
 * Active internet connection during installation (to fetch dependencies)
 * Basic hardware setup (OLED, encoder, buttons, LEDs connected as per `config.yaml`)
 
