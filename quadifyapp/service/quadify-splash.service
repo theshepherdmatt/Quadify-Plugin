@@ -1,0 +1,16 @@
+[Unit]
+Description=Quadify ultra-early OLED splash
+DefaultDependencies=no
+RequiresMountsFor=/data /usr
+After=systemd-modules-load.service
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/bin/python3 /data/plugins/system_hardware/quadify/quadifyapp/src/splash.py
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=15
+
+[Install]
+WantedBy=sysinit.target

@@ -13,11 +13,19 @@ from PIL import Image
 import cairosvg
 
 # ---- Config ----
-VOLUMIO_HOST = os.environ.get("VOLUMIO_HOST", "http://localhost:3000")
-ASSETS_DIR = os.environ.get("QUADIFY_ICON_DIR", "/home/volumio/Quadify/src/assets/pngs")
-MANIFEST_PATH = os.environ.get("QUADIFY_ICON_MANIFEST", "/home/volumio/Quadify/src/assets/icons_manifest.json")
-ICON_SIZE = int(os.environ.get("QUADIFY_ICON_SIZE", "50"))
-MARGIN_RATIO = float(os.environ.get("QUADIFY_ICON_MARGIN", "1.2"))  # >1 leaves margin, 1 = tight
+# Defaults point at the plugin install location. The /home/volumio/Quadify/
+# paths previously here were relics of an earlier install layout and meant
+# the script wrote to a different directory than the runtime read from.
+_HERE         = os.path.dirname(os.path.abspath(__file__))
+_DEFAULT_ROOT = os.path.normpath(os.path.join(_HERE, "..", ".."))           # .../quadifyapp/src
+_DEFAULT_DIR  = os.path.join(_DEFAULT_ROOT, "assets", "pngs")
+_DEFAULT_MAN  = os.path.join(_DEFAULT_ROOT, "assets", "icons_manifest.json")
+
+VOLUMIO_HOST  = os.environ.get("VOLUMIO_HOST", "http://localhost:3000")
+ASSETS_DIR    = os.environ.get("QUADIFY_ICON_DIR",      _DEFAULT_DIR)
+MANIFEST_PATH = os.environ.get("QUADIFY_ICON_MANIFEST", _DEFAULT_MAN)
+ICON_SIZE     = int(os.environ.get("QUADIFY_ICON_SIZE", "50"))
+MARGIN_RATIO  = float(os.environ.get("QUADIFY_ICON_MARGIN", "1.2"))         # >1 leaves margin, 1 = tight
 
 # Allow "from network.service_listener import get_available_services"
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
@@ -152,12 +160,41 @@ def normalise_icon(url: str, size: int = ICON_SIZE, margin_ratio: float = MARGIN
         return None
 
 
-def write_manifest(manifest: Dict[str, Any], path: str = MANIFEST_PATH) -> None:
+def _read_existing_manifest(path: str) -> Dict[str, Any]:
+    try:
+        with open(path, "r") as f:
+            return json.load(f) or {}
+    except Exception:
+        return {}
+
+
+def write_manifest(manifest: Dict[str, Any], path: str = MANIFEST_PATH) -> bool:
+    """
+    Atomic write. Returns True if written, False if skipped.
+
+    Guard: if the new manifest has 0 icons AND the existing on-disk manifest
+    is non-empty, we skip the write. This prevents a transient failure (e.g.
+    Volumio not yet up at boot) from clobbering a previously-good manifest
+    and is the main reason this script was unsafe to run at startup.
+    """
+    new_count = len((manifest.get("icons") or {}))
+    if new_count == 0 and os.path.exists(path):
+        existing = _read_existing_manifest(path)
+        existing_count = len((existing.get("icons") or {}))
+        if existing_count > 0:
+            logger.warning(
+                "Refusing to overwrite %s (%d entries) with an empty "
+                "manifest — Volumio likely wasn't ready when this ran.",
+                path, existing_count,
+            )
+            return False
+
     ensure_dir(os.path.dirname(path))
     tmp = path + ".tmp"
     with open(tmp, "w") as f:
         json.dump(manifest, f, indent=2, sort_keys=True)
     os.replace(tmp, path)
+    return True
 
 
 # ---- Main flow ----
@@ -212,8 +249,14 @@ def main() -> Dict[str, Any]:
         except Exception as e:
             logger.warning(f"Failed to save {label} -> {save_path}: {e}")
 
-    write_manifest(manifest, MANIFEST_PATH)
-    logger.info(f"Wrote icon manifest: {MANIFEST_PATH} ({len(manifest['icons'])} entries)")
+    written = write_manifest(manifest, MANIFEST_PATH)
+    if written:
+        logger.info(
+            f"Wrote icon manifest: {MANIFEST_PATH} "
+            f"({len(manifest['icons'])} entries)"
+        )
+    else:
+        logger.info(f"Manifest at {MANIFEST_PATH} kept (no new entries to apply).")
     return manifest
 
 

@@ -42,10 +42,8 @@ class MinimalScreen(BaseManager):
         # Initialize a variable to track the last update time for progress simulation
         self.last_update_time = time.time()
 
-        # Display update thread
-        self.update_thread = threading.Thread(target=self.update_display_loop, daemon=True)
-        self.update_thread.start()
-        self.logger.info("MinimalScreen: Started background update thread.")
+        # Display update thread is lazy — created on first start_mode().
+        self.update_thread = None
 
         # Connect Volumio state listener
         if self.volumio_listener:
@@ -123,12 +121,12 @@ class MinimalScreen(BaseManager):
         except Exception as e:
             self.logger.warning(f"MinimalScreen: Failed to emit 'getState'. Error => {e}")
 
-        # If update_thread is dead, restart it
-        if not self.update_thread.is_alive():
+        # Lazy/restart the update thread if it isn't running.
+        if self.update_thread is None or not self.update_thread.is_alive():
             self.stop_event.clear()
             self.update_thread = threading.Thread(target=self.update_display_loop, daemon=True)
             self.update_thread.start()
-            self.logger.debug("MinimalScreen: display update thread restarted.")
+            self.logger.debug("MinimalScreen: display update thread started.")
 
     def stop_mode(self):
         """

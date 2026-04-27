@@ -83,10 +83,8 @@ class ModernScreen(BaseManager):
         # Keep last-known service to show its icon while paused/stopped
         self.previous_service: Optional[str] = None
 
-        # Display update thread
-        self.update_thread = threading.Thread(target=self.update_display_loop, daemon=True)
-        self.update_thread.start()
-        self.logger.info("ModernScreen: Started background update thread.")
+        # Display update thread is lazy — created on first start_mode().
+        self.update_thread = None
 
         # Connect to Volumio listener
         if self.volumio_listener:
@@ -162,8 +160,8 @@ class ModernScreen(BaseManager):
             self.spectrum_thread.start()
             self.logger.info("ModernScreen: Spectrum reading thread started.")
 
-        # Ensure update thread alive
-        if not self.update_thread.is_alive():
+        # Ensure update thread alive (handles the lazy-init case on first activation)
+        if self.update_thread is None or not self.update_thread.is_alive():
             self.stop_event.clear()
             self.update_thread = threading.Thread(target=self.update_display_loop, daemon=True)
             self.update_thread.start()

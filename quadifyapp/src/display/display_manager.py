@@ -3,7 +3,7 @@ import os
 import time
 import threading
 import yaml
-from PIL import Image, ImageDraw, ImageFont, ImageSequence
+from PIL import Image, ImageDraw, ImageFont
 from luma.core.interface.serial import spi
 from luma.oled.device import ssd1322
 
@@ -321,6 +321,12 @@ class DisplayManager:
     # ---------- Splash / looped gfx ----------
 
     def show_logo(self, duration=5):
+        """Render the configured logo as a single static frame.
+
+        Works with PNG, JPG, or GIF (first frame only — we deliberately
+        dropped GIF animation to lighten the runtime). Holds the frame on
+        screen for `duration` seconds, then returns.
+        """
         if not self.oled:
             return
         logo_path = self._dget('logo_path')
@@ -329,45 +335,22 @@ class DisplayManager:
             return
         try:
             img = Image.open(logo_path)
+            if getattr(img, "is_animated", False):
+                img.seek(0)
+            if img.mode == "RGBA":
+                bg = Image.new("RGB", img.size, (0, 0, 0))
+                bg.paste(img, mask=img.split()[3])
+                img = bg
+            else:
+                img = img.convert("RGB")
+            if img.size != self.oled.size:
+                img = img.resize(self.oled.size, Image.LANCZOS)
+            self.oled.display(img.convert(self.oled.mode))
         except Exception as e:
             self.logger.error(f"Could not load logo from '{logo_path}': {e}")
             return
-
-        start = time.time()
-        if getattr(img, "is_animated", False):
-            while time.time() - start < duration:
-                for frame in ImageSequence.Iterator(img):
-                    if time.time() - start >= duration:
-                        break
-                    fr = frame.convert("RGB").resize(self.oled.size, Image.LANCZOS).convert(self.oled.mode)
-                    self.oled.display(fr)
-                    time.sleep(frame.info.get('duration', 100) / 1000.0)
-        else:
-            fr = img.convert(self.oled.mode).resize(self.oled.size, Image.LANCZOS)
-            self.oled.display(fr)
+        if duration > 0:
             time.sleep(duration)
-
-    def show_ready_gif_until_event(self, stop_event):
-        if not self.oled:
-            return
-        path = self._dget('ready_loop_path')
-        if not path:
-            self.logger.error("ready_loop_path not set in display config.")
-            return
-        try:
-            gif = Image.open(path)
-        except Exception as e:
-            self.logger.error(f"Could not load ready loop GIF: {e}")
-            return
-
-        self.logger.info("Displaying ready.gif in a loop until event set.")
-        while not stop_event.is_set():
-            for frame in ImageSequence.Iterator(gif):
-                if stop_event.is_set():
-                    return
-                fr = frame.convert("RGB").resize(self.oled.size, Image.LANCZOS).convert(self.oled.mode)
-                self.oled.display(fr)
-                time.sleep(frame.info.get('duration', 100) / 1000.0)
 
     # ---------- Lifecycle ----------
 

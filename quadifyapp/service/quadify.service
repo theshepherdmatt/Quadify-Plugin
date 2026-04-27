@@ -1,6 +1,6 @@
 [Unit]
 Description=Main Quadify Service
-After=network.target
+After=network.target quadify-splash.service
 
 [Service]
 Type=simple

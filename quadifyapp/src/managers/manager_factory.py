@@ -29,51 +29,45 @@ class ManagerFactory:
 
     def setup_mode_manager(self):
         """
-        Create and configure all managers/screens, then assign them to ModeManager (or other places).
+        Wire managers/screens into ModeManager.
+
+        Eager: menu_manager + the small menus + interconnected sub-managers.
+               These are cheap to construct and several of them have to
+               exist before others (config_menu, library_manager etc. all
+               take menu_controller=menu_manager in their __init__).
+
+        Lazy: every playback screen + the screensaver. These each load PIL
+              backgrounds and fonts on construction; we only pay that cost
+              when the user first transitions into the corresponding mode.
         """
-        # ----- Create each object -----
-
-        # Quadify "menu" managers
-        self.menu_manager     = self.create_menu_manager()  # store as self.menu_manager
-        library_manager       = self.create_library_manager()
-        streaming_manager     = self.create_streaming_manager(service_name="tidal", root_uri="tidal://")
-        radio_manager         = self.create_radio_manager()
-
-        # Quoode/Quadify common screens
-        webradio_screen       = self.create_webradio_screen()
-        modern_screen         = self.create_modern_screen()
-        minimal_screen        = self.create_minimal_screen()
-        original_screen       = self.create_original_screen()
-        vu_screen             = self.create_vu_screen()
-        digitalvu_screen      = self.create_digitalvu_screen()
-
-        # Additional items referenced by new ModeManager states
-        config_menu           = self.create_config_menu()
-        clock_menu            = self.create_clock_menu()
-        screensaver_menu      = self.create_screensaver_menu()
-        screensaver           = self.create_screensaver()
-        system_update_menu    = self.create_system_update_menu()
-
-        # ----- Assign them to ModeManager -----
+        # ----- Eager: menu_manager first (others depend on it) -----
+        self.menu_manager = self.create_menu_manager()
         self.mode_manager.set_menu_manager(self.menu_manager)
-        self.mode_manager.set_config_menu(config_menu)
-        self.mode_manager.set_library_manager(library_manager)
-        self.mode_manager.set_streaming_manager(streaming_manager)
-        self.mode_manager.set_radio_manager(radio_manager)
 
-        self.mode_manager.set_webradio_screen(webradio_screen)
-        self.mode_manager.set_modern_screen(modern_screen)
-        self.mode_manager.set_minimal_screen(minimal_screen)
-        self.mode_manager.set_original_screen(original_screen)
-        self.mode_manager.set_vu_screen(vu_screen)
-        self.mode_manager.set_digitalvu_screen(digitalvu_screen)
+        # ----- Eager: cheap menus + interconnected sub-managers -----
+        self.mode_manager.set_config_menu(self.create_config_menu())
+        self.mode_manager.set_clock_menu(self.create_clock_menu())
+        self.mode_manager.set_screensaver_menu(self.create_screensaver_menu())
+        self.mode_manager.set_system_update_menu(self.create_system_update_menu())
+        self.mode_manager.set_library_manager(self.create_library_manager())
+        self.mode_manager.set_streaming_manager(
+            self.create_streaming_manager(service_name="tidal", root_uri="tidal://")
+        )
+        self.mode_manager.set_radio_manager(self.create_radio_manager())
 
-        self.mode_manager.set_clock_menu(clock_menu)
-        self.mode_manager.set_screensaver_menu(screensaver_menu)
-        self.mode_manager.set_screensaver(screensaver)
-        self.mode_manager.set_system_update_menu(system_update_menu)
+        # ----- Lazy: heavy playback screens + screensaver -----
+        # These get built on the first transition into their mode.
+        self.mode_manager.register_lazy("webradio_screen",  self.create_webradio_screen)
+        self.mode_manager.register_lazy("modern_screen",    self.create_modern_screen)
+        self.mode_manager.register_lazy("minimal_screen",   self.create_minimal_screen)
+        self.mode_manager.register_lazy("original_screen",  self.create_original_screen)
+        self.mode_manager.register_lazy("vu_screen",        self.create_vu_screen)
+        self.mode_manager.register_lazy("digitalvu_screen", self.create_digitalvu_screen)
+        self.mode_manager.register_lazy("screensaver",      self.create_screensaver)
 
-        self.logger.info("ManagerFactory: ModeManager fully configured with managers & screens.")
+        self.logger.info(
+            "ManagerFactory: eager menus configured; 7 heavy screens registered for lazy build."
+        )
 
     # ----------------------------------------------------------------
     #  Create Methods for each manager/screen
