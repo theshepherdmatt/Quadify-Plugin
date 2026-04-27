@@ -883,13 +883,12 @@ class ModeManager:
     def _handle_track_change(self):
         self.is_track_changing = True
         self.track_change_in_progress = True
-        if not self.pause_stop_timer:
-            self.pause_stop_timer = threading.Timer(
-                self.pause_stop_delay,
-                self.switch_to_clock_if_still_stopped_or_paused
-            )
-            self.pause_stop_timer.start()
-            self.logger.debug("ModeManager: Started stop verification timer.")
+        # Reuse _start_pause_timer so _pause_pending and _last_pause_time are
+        # set the same way as on a pause event. Without this, the timer fired
+        # 5s after a webradio stop with _pause_pending=False and decided "no
+        # action needed" — staying stuck in webradio instead of falling back
+        # to the clock.
+        self._start_pause_timer()
 
     def _handle_playback_states(self, status, service, state_data, skip_pause_stop_timer=False):
         now = time.time()
