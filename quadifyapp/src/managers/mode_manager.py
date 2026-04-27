@@ -99,6 +99,7 @@ class ModeManager:
         self.webradio_screen = None
         self.vu_screen = None
         self.digitalvu_screen = None
+        self.airplay_screen = None
         self.screensaver = None
         self.screensaver_menu = None
         self.clock_menu = None
