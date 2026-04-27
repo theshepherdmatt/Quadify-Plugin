@@ -129,10 +129,34 @@ def main():
 
     # 2. Earliest possible draw: pre-splash text appears in ~10ms while the
     #    239KB logo GIF loads in step 4. The user sees feedback essentially
-    #    the moment SPI is alive.
+    #    the moment SPI is alive. Drawn via draw_custom so we can centre a
+    #    large font (clock_bold ~42pt) properly on the 256x64 panel.
     try:
-        font_key = "menu_font_bold" if "menu_font_bold" in display_manager.fonts else "default"
-        display_manager.display_text("STARTING…", (84, 26), font_key=font_key)
+        starting_text = "STARTING…"
+        font_key = next(
+            (k for k in ("clock_bold", "clock_sans", "menu_font_bold") if k in display_manager.fonts),
+            "default",
+        )
+        starting_font = display_manager.fonts.get(font_key)
+
+        def _draw_starting(draw):
+            w, h = display_manager.oled.size
+            try:
+                draw.text((w // 2, h // 2), starting_text,
+                          font=starting_font, fill="white", anchor="mm")
+            except (TypeError, ValueError):
+                # Older Pillow without anchor support.
+                try:
+                    bbox = draw.textbbox((0, 0), starting_text, font=starting_font)
+                    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+                    tx, ty = -bbox[0], -bbox[1]
+                except AttributeError:
+                    tw, th = draw.textsize(starting_text, font=starting_font)
+                    tx = ty = 0
+                draw.text(((w - tw) // 2 + tx, (h - th) // 2 + ty),
+                          starting_text, font=starting_font, fill="white")
+
+        display_manager.draw_custom(_draw_starting)
     except Exception as e:
         log.debug("Pre-splash text failed: %s", e)
 
