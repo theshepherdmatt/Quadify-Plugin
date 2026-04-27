@@ -8,6 +8,9 @@ Splits two concerns out of main.py:
   * BootCoordinator: shows splash, waits for first Volumio state OR timeout
     OR explicit skip. No fixed minimum loading time, no ready-loop, no
     manual interrupt.
+  * is_network_ready / is_clock_synced / wait_for_network_and_clock: small
+    helpers used between splash and clock so the clock isn't shown with a
+    wildly wrong time on a cold boot before NTP has converged.
 """
 
 import logging
@@ -15,7 +18,65 @@ import os
 import socket
 import subprocess
 import threading
+import time
 from typing import Callable, Optional
+
+
+# --------------------------- Network / clock readiness ---------------------------
+
+def is_network_ready() -> bool:
+    """True iff the system has at least one default IPv4 route."""
+    try:
+        out = subprocess.run(
+            ["ip", "route", "show", "default"],
+            capture_output=True, text=True, timeout=2,
+        )
+        return "default via" in out.stdout
+    except Exception:
+        return False
+
+
+def is_clock_synced() -> bool:
+    """True iff systemd-timesyncd reports the clock is NTP-synchronised."""
+    try:
+        out = subprocess.run(
+            ["timedatectl", "show", "-p", "NTPSynchronized", "--value"],
+            capture_output=True, text=True, timeout=2,
+        )
+        if out.stdout.strip().lower() == "yes":
+            return True
+    except Exception:
+        pass
+    # Fallback: timesyncd writes this marker file when it first syncs.
+    return os.path.exists("/run/systemd/timesync/synchronized")
+
+
+def wait_for_network_and_clock(timeout: float,
+                               poll_interval: float = 0.5,
+                               logger: Optional[logging.Logger] = None) -> bool:
+    """Block until network is up AND clock is NTP-synced, or `timeout` seconds pass.
+
+    Returns True if both conditions were met before the deadline, False on timeout.
+    """
+    log = logger or logging.getLogger("BootReady")
+    deadline = time.time() + max(timeout, 0.0)
+    saw_net = False
+    saw_clk = False
+    while time.time() < deadline:
+        if not saw_net and is_network_ready():
+            saw_net = True
+            log.info("Network ready (default route present).")
+        if not saw_clk and is_clock_synced():
+            saw_clk = True
+            log.info("System clock synchronised via NTP.")
+        if saw_net and saw_clk:
+            return True
+        time.sleep(poll_interval)
+    log.warning(
+        "Boot readiness timed out after %.1fs (network=%s, clock=%s).",
+        timeout, saw_net, saw_clk,
+    )
+    return False
 
 
 _STREAMING_MODES = (

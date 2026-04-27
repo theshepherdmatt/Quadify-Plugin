@@ -18,11 +18,43 @@ import yaml
 # DisplayManager, but socketio / transitions / screen modules / rotary /
 # icon converter) are deferred until after the first draw — see main().
 from display.display_manager import DisplayManager
-from startup import BootCoordinator, CommandDispatcher, start_command_server
+from startup import (
+    BootCoordinator,
+    CommandDispatcher,
+    start_command_server,
+    wait_for_network_and_clock,
+)
 
 
 CONFIG_PATH = "/data/plugins/system_hardware/quadify/quadifyapp/config.yaml"
 SPLASH_MAX_WAIT = 4.0  # hard cap before we assume Volumio isn't going to talk
+NETWORK_READY_TIMEOUT = 60.0  # cap before we land on clock with possibly-wrong time
+
+
+def _draw_full_image(display_manager, log, path: str) -> bool:
+    """Draw a full-size image to the OLED, scaling if needed. Returns True on success."""
+    try:
+        from PIL import Image as _Image
+        img = _Image.open(path)
+        if getattr(img, "is_animated", False):
+            img.seek(0)
+        if img.mode == "RGBA":
+            bg = _Image.new("RGB", img.size, (0, 0, 0))
+            bg.paste(img, mask=img.split()[3])
+            img = bg
+        else:
+            img = img.convert("RGB")
+        oled = display_manager.oled
+        if oled is None:
+            log.warning("OLED not initialised; cannot draw %s", path)
+            return False
+        if img.size != oled.size:
+            img = img.resize(oled.size, _Image.LANCZOS)
+        oled.display(img.convert(oled.mode))
+        return True
+    except Exception as e:
+        log.error("Image render failed (%s): %s", path, e)
+        return False
 
 # Per-screen rotary volume steps preserved from the original behaviour:
 # original is symmetric, the rest are intentionally asymmetric.
@@ -119,33 +151,20 @@ def main():
     from controls.rotary_control import RotaryControl
 
     # 4. Logo splash replaces the pre-splash text.
-    #    Inline draw so animated/palette GIFs are handled the same way
-    #    DisplayManager.show_logo handles its animated path: convert→resize→
-    #    convert. The bare display_image call did resize→convert which
-    #    produces a near-black image for palette-mode GIFs.
     splash_path = display_config.get("logo_path")
-    if splash_path:
-        try:
-            from PIL import Image as _Image  # local import; PIL already in
-            img = _Image.open(splash_path)
-            if getattr(img, "is_animated", False):
-                img.seek(0)
-            if img.mode == "RGBA":
-                bg = _Image.new("RGB", img.size, (0, 0, 0))
-                bg.paste(img, mask=img.split()[3])
-                img = bg
-            else:
-                img = img.convert("RGB")
-            oled = display_manager.oled
-            if oled is not None:
-                if img.size != oled.size:
-                    img = img.resize(oled.size, _Image.LANCZOS)
-                oled.display(img.convert(oled.mode))
-                log.info("Splash logo drawn from %s", splash_path)
-            else:
-                log.warning("Splash skipped: OLED not initialised.")
-        except Exception as e:
-            log.error("Splash render failed: %s", e)
+    if splash_path and _draw_full_image(display_manager, log, splash_path):
+        log.info("Splash logo drawn from %s", splash_path)
+
+    # 4b. Network indicator: shown while we wait for the system to be online
+    #     and NTP-synced. Defaults to network.png alongside logo.png.
+    network_path = display_config.get("network_path")
+    if not network_path and splash_path:
+        network_path = os.path.join(os.path.dirname(splash_path), "network.png")
+    if network_path and os.path.isfile(network_path):
+        if _draw_full_image(display_manager, log, network_path):
+            log.info("Network indicator drawn from %s", network_path)
+    else:
+        log.debug("No network indicator image at %s", network_path)
 
     # 5. Listener starts connecting in parallel with everything below.
     volumio_listener = VolumioListener(
@@ -222,6 +241,11 @@ def main():
             mode_manager.to_clock()  # safety net: somehow nothing routed
     else:
         # stop / pause / unknown / no-state-at-all → land on the clock face.
+        # Before showing the clock we want network up AND NTP synced,
+        # otherwise the clock would briefly display whatever stale time
+        # the Pi booted with (often 1970 on a unit without an RTC).
+        # network.png stays on the OLED across this wait.
+        wait_for_network_and_clock(NETWORK_READY_TIMEOUT, logger=log)
         # Replay the buffered state first so first_state_handoff is consumed
         # cleanly (otherwise the next real event still thinks it's first).
         if state:
