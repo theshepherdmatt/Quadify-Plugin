@@ -134,7 +134,8 @@ def main():
     try:
         starting_text = "STARTING…"
         font_key = next(
-            (k for k in ("clock_bold", "clock_sans", "menu_font_bold") if k in display_manager.fonts),
+            (k for k in ("minimal_service", "radio_title", "song_font", "menu_font_bold")
+             if k in display_manager.fonts),
             "default",
         )
         starting_font = display_manager.fonts.get(font_key)
