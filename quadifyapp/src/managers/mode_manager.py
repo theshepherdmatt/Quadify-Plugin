@@ -34,8 +34,6 @@ class ModeManager:
         {'name': 'systemupdate',    'on_enter': 'enter_systemupdate'},
         {'name': 'menu',            'on_enter': 'enter_menu', 'on_exit': 'cancel_menu_inactivity_timer'},
         {'name': 'remotemenu',      'on_enter': 'enter_remotemenu'},
-        {'name': 'airplay',          'on_enter': 'enter_airplay'},
-
 
         {'name': 'streaming',       'on_enter': 'enter_streaming'},
         {'name': 'playlists',       'on_enter': 'enter_playlists'},
@@ -84,7 +82,7 @@ class ModeManager:
         for key in (
             "display_mode", "clock_font_key", "show_seconds", "show_date",
             "screensaver_enabled", "screensaver_type", "screensaver_timeout",
-            "oled_brightness", "cava_enabled", "modern_spectrum_mode", "ignore_airplay"
+            "oled_brightness", "cava_enabled", "modern_spectrum_mode",
         ):
             self.config[key] = preferences[key]
 
@@ -99,7 +97,6 @@ class ModeManager:
         self.webradio_screen = None
         self.vu_screen = None
         self.digitalvu_screen = None
-        self.airplay_screen = None
         self.screensaver = None
         self.screensaver_menu = None
         self.clock_menu = None
@@ -222,7 +219,6 @@ class ModeManager:
             "oled_brightness",
             "cava_enabled",
             "modern_spectrum_mode",
-            "ignore_airplay",
         )
         for k in owned_keys:
             if k in self.config:
@@ -278,7 +274,6 @@ class ModeManager:
             "screensaver_timeout": 120,
             "oled_brightness": 100,
             "cava_enabled": False,
-            "ignore_airplay": True,
         }
         if os.path.exists(self.preference_file_path):
             try:
@@ -410,7 +405,6 @@ class ModeManager:
         self.machine.add_transition('to_systemupdate', source='*', dest='systemupdate', before='push_current_state')
         self.machine.add_transition('to_radio',        source='*', dest='radio', before='push_current_state')
         self.machine.add_transition('to_menu',         source='*', dest='menu', before='push_current_state')
-        self.machine.add_transition('to_airplay',     source='*', dest='airplay', before='push_current_state')
 
         self.machine.add_transition('to_streaming',    source='*', dest='streaming', before='push_current_state')
         self.machine.add_transition('to_webradio',     source='*', dest='webradio', before='push_current_state')
@@ -476,8 +470,6 @@ class ModeManager:
             self.digitalvu_screen.stop_mode()
         if self.webradio_screen and self.webradio_screen.is_active:
             self.webradio_screen.stop_mode()
-        if self.airplay_screen and self.airplay_screen.is_active:
-            self.airplay_screen.stop_mode()
         if self.system_update_menu and self.system_update_menu.is_active:
             self.system_update_menu.stop_mode()
             
@@ -847,18 +839,6 @@ class ModeManager:
         self.reset_idle_timer()
         self.update_current_mode()
 
-    def to_airplay(self, *args, **kwargs):
-        if self.config.get("ignore_airplay", True):
-            self.logger.info("AirPlay transitions are disabled (ignore_airplay=True) — staying on clock.")
-            if self.get_mode() != "clock":
-                self.to_clock()
-            return
-        self.logger.info("ModeManager: Switching to AirPlay mode.")
-        self.machine.set_state("airplay")
-        self.current_screen = self.airplay_screen
-        if self.airplay_screen:
-            self.airplay_screen.start_mode()
-
     # --- Playback / Volumio State Handling ---
     def process_state_change(self, sender, state, **kwargs):
         with self.lock:
@@ -909,20 +889,12 @@ class ModeManager:
             self.logger.debug("ModeManager: Skipping a rapid mode switch due to cooldown.")
             return
 
-        # AirPlay routing.
-        # When ignore_airplay=True (legacy default for users who don't want
-        # the screen to flip on every iPhone "discovered me" beacon), the
-        # state update is dropped and we stay in clock. When False, AirPlay
-        # is treated like any other playback service and falls through to
-        # the normal target-mode selection below — meaning whichever
-        # playback screen the user has configured will render the AirPlay
-        # state (title / artist / album / volume) the same way it renders
-        # MPD or Spotify state. No dedicated airplay_screen needed.
-        if service in ("airplay", "airplay_emulation"):
-            if self.config.get("ignore_airplay", False):
-                self.logger.debug("AirPlay ignored per ignore_airplay preference.")
-                return
-            self.logger.debug("AirPlay routed through normal playback handling.")
+        # AirPlay (service "airplay" / "airplay_emulation") is treated like
+        # any other playback service: it falls through to the target-mode
+        # selection below and renders on whichever playback screen the user
+        # has configured. The Volumio AirPlay plugin's own enable/disable
+        # toggle is the kill-switch — no dedicated airplay screen, no
+        # in-app suppression preference.
 
         if status == "play":
             # Decide target mode
@@ -990,7 +962,7 @@ class ModeManager:
     def toggle_play_pause(self):
         current_mode = self.get_mode()
         self.logger.debug("toggle_play_pause: Current mode before toggling: %s", current_mode)
-        if current_mode in ['clock', 'original', 'modern', 'minimal', 'webradio', 'airplay', 'vuscreen', 'digitalvuscreen']:
+        if current_mode in ['clock', 'original', 'modern', 'minimal', 'webradio', 'vuscreen', 'digitalvuscreen']:
             if current_mode == 'clock':
                 # Now that Clock implements toggle_play_pause, use it directly.
                 if hasattr(self.clock, "toggle_play_pause"):
@@ -1009,8 +981,6 @@ class ModeManager:
                 self.digitalvu_screen.toggle_play_pause()
             elif current_mode == 'webradio' and self.webradio_screen:
                 self.webradio_screen.toggle_play_pause()
-            elif current_mode == 'airplay' and self.webradio_screen:
-                self.airplay_screen.toggle_play_pause()
             else:
                 self.logger.warning(f"No screen available to toggle play/pause in mode: {current_mode}")
         else:

@@ -27,7 +27,6 @@
     "safe_shutdown": true
   },
   "modern_spectrum_mode": "bars",
-  "ignore_airplay": true,
   "meta": {
     "rev": 1,
     "last_writer": "rotary"
