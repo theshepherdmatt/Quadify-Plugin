@@ -20,6 +20,23 @@ APT_OPTS='-y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confo
 sudo dpkg --configure -a >/dev/null 2>&1 || true
 sudo apt-get -f $APT_OPTS install >/dev/null 2>&1 || true
 
+# Resilient apt install.
+#   --no-upgrade: install only missing packages; never bump already-present ones.
+#   This is the key fix: it stops apt from pulling libpython3.11-stdlib (deb12u7),
+#   whose /usr/lib/python3.11/EXTERNALLY-MANAGED file is also owned by
+#   raspberrypi-sys-mods. dpkg refuses the duplicate and aborts the whole
+#   transaction, which is what failed the install before.
+#   On failure: heal a half-configured dpkg, then retry once. Returns the
+#   status of the final attempt so callers can decide whether to abort.
+apt_install() {
+  echo "\$ apt-get install --no-upgrade $*" | tee -a "$LOG_FILE"
+  apt-get $APT_OPTS install --no-upgrade "$@" && return 0
+  warn "apt install hit a snag; healing dpkg and retrying once…"
+  sudo dpkg --configure -a || true
+  sudo apt-get -f $APT_OPTS install || true
+  apt-get $APT_OPTS install --no-upgrade "$@"
+}
+
 # -----------------------------
 # LIRC: force raw /dev/lirc0 + install our remote
 # -----------------------------
@@ -46,7 +63,7 @@ EOF
   run sh -c 'for f in /etc/lirc/lircd.conf.d/*.conf; do mv "$f" "$f.disabled"; done 2>/dev/null || true'
 
   run systemctl restart lircd || true
-  journalctl -u lircd -n 30 --no-pager | egrep 'Initial device|Options: driver|Using remote|ready' || true
+  journalctl -u lircd -n 30 --no-pager | grep -E 'Initial device|Options: driver|Using remote|ready' || true
 
   log "LIRC set to driver=default device=/dev/lirc0 and remote installed."
 }
@@ -86,9 +103,10 @@ install_cava_from_fork() {
 
   run rm -rf "$BUILD" "$PREFIX"
 
-  run apt-get $APT_OPTS install \
+  apt_install \
     git libfftw3-dev libasound2-dev libncurses-dev \
-    libtool automake autoconf gcc make pkg-config libiniparser-dev
+    libtool automake autoconf gcc make pkg-config libiniparser-dev \
+  || { warn "CAVA build dependencies failed to install"; exit 1; }
 
   run git clone --depth 1 "$REPO" "$BUILD"
 
@@ -195,8 +213,9 @@ if [ -f /etc/lirc/irexec.lircrc ]; then
 fi
 
 log "Installing system dependencies…"
-run apt-get update #>/dev/null 2>&1
-run apt-get $APT_OPTS install \
+run apt-get update
+
+apt_install \
   python3 python3-venv python3-dev python3-all-dev \
   i2c-tools python3-smbus \
   lirc lsof \
@@ -208,16 +227,14 @@ run apt-get $APT_OPTS install \
   libopenjp2-7 libtiff-dev liblcms2-dev libwebp-dev \
   libcurl4-openssl-dev \
   python3-rpi.gpio \
-  python3-pycurl
-
-
-  #>/dev/null 2>&1
+  python3-pycurl \
+|| { warn "core system dependencies failed to install"; exit 1; }
 
 # -----------------------------
 # 2) Python deps
 # -----------------------------
 log "Ensuring python3-pip is installed…"
-run apt-get $APT_OPTS install python3-pip
+apt_install python3-pip || warn "python3-pip install failed (continuing)"
 
 REQ_PATH=""
 [ -f "$PLUGIN_DIR/quadifyapp/requirements.txt" ] && REQ_PATH="$PLUGIN_DIR/quadifyapp/requirements.txt"
@@ -225,8 +242,8 @@ REQ_PATH=""
 
 if [ -n "$REQ_PATH" ]; then
   log "Installing Python requirements from: $REQ_PATH"
-   true
-  run python3 -m pip install --no-cache-dir --break-system-packages -r "$REQ_PATH" || warn "pip requirements failed"
+  python3 -m pip install --no-cache-dir --break-system-packages -r "$REQ_PATH" \
+    || warn "pip requirements failed"
 else
   warn "requirements.txt not found; skipping Python bulk install"
 fi
@@ -329,7 +346,7 @@ RemainAfterExit=yes
 WantedBy=multi-user.target
 UNIT
 
-# Don’t fail if CLI isn’t present
+# Don't fail if CLI isn't present
 volumio plugin disable ir_controller >/dev/null 2>&1 || true
 
 # ============================
@@ -373,7 +390,7 @@ install_shutdown_assets() {
   DST_UNIT_LED="/etc/systemd/system/quadify-leds-off.service"
   DST_UNIT_CPO="/etc/systemd/system/volumio-clean-poweroff.service"
 
-  # Verify sources exist (warn, don’t abort the whole install)
+  # Verify sources exist (warn, don't abort the whole install)
   missing=0
   for f in "$SRC_LED_OFF" "$SRC_CLEAN_PO" "$SRC_UNIT_LED" "$SRC_UNIT_CPO"; do
     if [ ! -f "$f" ]; then
@@ -400,7 +417,7 @@ ENV
 
   run systemctl daemon-reload
 
-  # Enable what exists; don’t fail if absent
+  # Enable what exists; don't fail if absent
   [ -f "$DST_UNIT_LED" ] && run systemctl enable quadify-leds-off.service || true
   [ -f "$DST_UNIT_CPO" ] && run systemctl enable volumio-clean-poweroff.service || true
 
