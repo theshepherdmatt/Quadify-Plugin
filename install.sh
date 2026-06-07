@@ -32,11 +32,11 @@ sudo apt-get -f $APT_OPTS -o Dpkg::Options::=--force-overwrite install >/dev/nul
 #   final attempt so callers can decide whether to abort.
 apt_install() {
   echo "\$ apt-get install --no-upgrade $*" | tee -a "$LOG_FILE"
-  apt-get $APT_OPTS install --no-upgrade "$@" && return 0
+  sudo apt-get $APT_OPTS install --no-upgrade "$@" && return 0
   warn "apt install hit a snag; healing dpkg (force-overwrite) and retrying once…"
   sudo dpkg --configure -a --force-overwrite || true
   sudo apt-get -f $APT_OPTS -o Dpkg::Options::=--force-overwrite install || true
-  apt-get $APT_OPTS install --no-upgrade "$@"
+  sudo apt-get $APT_OPTS install --no-upgrade "$@"
 }
 
 # -----------------------------
@@ -245,7 +245,7 @@ REQ_PATH=""
 if [ -n "$REQ_PATH" ]; then
   log "Installing Python requirements from: $REQ_PATH"
   python3 -m pip install --no-cache-dir --break-system-packages -r "$REQ_PATH" \
-    || warn "pip requirements failed"
+    || { warn "pip requirements failed"; exit 1; }
 else
   warn "requirements.txt not found; skipping Python bulk install"
 fi
@@ -501,7 +501,6 @@ run systemctl start quadify-icon-fetch.service || true
 run systemctl disable --now quadify-buttonsleds.service || true
 systemctl disable --now buttonsleds.service >/dev/null 2>&1 || true
 
-[ -f /etc/systemd/system/ir-listener.service ] && run systemctl enable --now ir-listener.service || true
 [ -f /etc/systemd/system/early_led8.service ] && run systemctl enable early_led8.service || true
 
 write_sudoers
@@ -545,17 +544,22 @@ else
 fi
 
 # -----------------------------
-# 9) Sanity ping
+# 9) Sanity ping (gates the install — abort if any module is missing)
 # -----------------------------
-python3 - <<'PY' || true
-import importlib
+python3 - <<'PY' || { warn "Sanity ping found missing Python modules; aborting"; exit 1; }
+import importlib, sys
 mods = ["RPi.GPIO","smbus2","yaml","cairosvg","PIL","luma.core","luma.oled", "transitions"]
+missing = []
 for m in mods:
     try:
         importlib.import_module(m)
         print(f"{m:12s}: OK")
     except Exception as e:
         print(f"{m:12s}: MISSING ({e.__class__.__name__})")
+        missing.append(m)
+if missing:
+    print("Missing modules: " + ", ".join(missing))
+    sys.exit(1)
 PY
 
 log "Install complete. Reboot recommended."
