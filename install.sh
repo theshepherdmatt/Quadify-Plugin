@@ -16,24 +16,26 @@ BOOTDIR="/boot"
 export DEBIAN_FRONTEND=noninteractive
 APT_OPTS='-y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold'
 
-# If a previous run left dpkg half-configured (like lirc), heal it first
-sudo dpkg --configure -a >/dev/null 2>&1 || true
-sudo apt-get -f $APT_OPTS install >/dev/null 2>&1 || true
+# Heal a half-configured / half-upgraded dpkg state before we start.
+# --force-overwrite lets libpython3.11-stdlib (deb12u7) claim
+# /usr/lib/python3.11/EXTERNALLY-MANAGED, which raspberrypi-sys-mods also ships.
+# Without it, any 'apt -f install' that tries to finish a stuck python3.11
+# upgrade dies on the file collision and leaves apt broken.
+sudo dpkg --configure -a --force-overwrite >/dev/null 2>&1 || true
+sudo apt-get -f $APT_OPTS -o Dpkg::Options::=--force-overwrite install >/dev/null 2>&1 || true
 
 # Resilient apt install.
 #   --no-upgrade: install only missing packages; never bump already-present ones.
-#   This is the key fix: it stops apt from pulling libpython3.11-stdlib (deb12u7),
-#   whose /usr/lib/python3.11/EXTERNALLY-MANAGED file is also owned by
-#   raspberrypi-sys-mods. dpkg refuses the duplicate and aborts the whole
-#   transaction, which is what failed the install before.
-#   On failure: heal a half-configured dpkg, then retry once. Returns the
-#   status of the final attempt so callers can decide whether to abort.
+#   This stops apt from pulling libpython3.11-stdlib (deb12u7) on a clean system.
+#   On failure: heal a half-configured dpkg (with --force-overwrite to clear the
+#   EXTERNALLY-MANAGED collision), then retry once. Returns the status of the
+#   final attempt so callers can decide whether to abort.
 apt_install() {
   echo "\$ apt-get install --no-upgrade $*" | tee -a "$LOG_FILE"
   apt-get $APT_OPTS install --no-upgrade "$@" && return 0
-  warn "apt install hit a snag; healing dpkg and retrying once…"
-  sudo dpkg --configure -a || true
-  sudo apt-get -f $APT_OPTS install || true
+  warn "apt install hit a snag; healing dpkg (force-overwrite) and retrying once…"
+  sudo dpkg --configure -a --force-overwrite || true
+  sudo apt-get -f $APT_OPTS -o Dpkg::Options::=--force-overwrite install || true
   apt-get $APT_OPTS install --no-upgrade "$@"
 }
 
