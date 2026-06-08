@@ -6,16 +6,5 @@ __pycache__/
 *.zip
 *.tar.gz
 install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
 node_modules/
+quadifyapp/src/cache/album_art/
