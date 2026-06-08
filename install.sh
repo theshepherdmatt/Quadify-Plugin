@@ -47,6 +47,13 @@ configure_lirc_default() {
 
   LIRC_OPTIONS="/etc/lirc/lirc_options.conf"
 
+  # Preserve the true stock file on the very first install only (guard prevents
+  # a reinstall from clobbering the genuine original with our modified version).
+  if [ -f /etc/lirc/lirc_options.conf ] && [ ! -f /etc/lirc/lirc_options.conf.quadify.bak ]; then
+    cp -a /etc/lirc/lirc_options.conf /etc/lirc/lirc_options.conf.quadify.bak
+    log "Backed up stock lirc_options.conf -> .quadify.bak"
+  fi
+
   sudo tee "$LIRC_OPTIONS" >/dev/null <<'EOF'
 [lircd]
 nodaemon = False
@@ -54,6 +61,13 @@ driver   = default
 device   = /dev/lirc0
 output   = /run/lirc/lircd
 EOF
+
+  # Preserve the true stock file on the very first install only (guard prevents
+  # a reinstall from clobbering the genuine original with our modified version).
+  if [ -f /etc/lirc/lircd.conf ] && [ ! -f /etc/lirc/lircd.conf.quadify.bak ]; then
+    cp -a /etc/lirc/lircd.conf /etc/lirc/lircd.conf.quadify.bak
+    log "Backed up stock lircd.conf -> .quadify.bak"
+  fi
 
   if [ -f "$PLUGIN_DIR/quadifyapp/lirc/lircd.conf" ]; then
     run install -m 644 "$PLUGIN_DIR/quadifyapp/lirc/lircd.conf" /etc/lirc/lircd.conf
@@ -599,4 +613,5 @@ PY
 run configure_samba_share
 
 log "Install complete. Reboot recommended."
+echo "plugininstallend"
 exit 0

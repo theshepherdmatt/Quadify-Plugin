@@ -16,7 +16,5 @@
 
   "os": ["bookworm"],
 
-  "architecture": ["armhf", "arm64"],
-
-  "uninstall_script": "uninstall.js"
+  "architecture": ["armhf", "arm64"]
 }

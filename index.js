@@ -507,7 +507,7 @@ ControllerQuadify.prototype.onStop = function () {
     if (self.buttonsLedsUnit) units.push(self.buttonsLedsUnit);
     await libQ.allSettled(units.map(u => self.controlService(u, false)));
     // Safe-shutdown units are only enabled/disabled, not necessarily running
-    await self.controlSafeShutdown(false).fail(() => libQ.resolve());
+    await self.controlSafeShutdown(false).catch(() => {});
   })()
     .then(() => { self.logger.info('[Quadify] onStop complete'); d.resolve(); })
     .catch(err => {
