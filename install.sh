@@ -560,6 +560,12 @@ configure_mpd_fifo
 sudo sed -i "s|^ExecStart=.*|ExecStart=$PLUGIN_DIR/cava/bin/cava -p $PLUGIN_DIR/cava/config/default_config|" \
   /etc/systemd/system/cava.service || true
 
+# cava ignores SIGTERM, so cap the stop wait at 5s then force-kill (keeps uninstall fast)
+if ! grep -q '^TimeoutStopSec=' /etc/systemd/system/cava.service; then
+  sudo sed -i '/^\[Service\]/a TimeoutStopSec=5\nSendSIGKILL=yes' \
+    /etc/systemd/system/cava.service || true
+fi
+
 run systemctl daemon-reload
 
 # Enable only (do NOT start during install)
