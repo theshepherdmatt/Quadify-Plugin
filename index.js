@@ -266,7 +266,7 @@ function buildCanonicalFromAny(rawOrIgnored, hwYaml = {}) {
   // Seed nested with defaults, then overlay any nested sections found in raw
   const out = shallowMerge(
     {
-      display:  { spectrum: true,  screen: 'modern', rotate: 0, oled_brightness: 255 },
+      display:  { spectrum: true,  screen: 'modern', rotate: 180, oled_brightness: 255 },
       controls: { buttons_led_service: true, mcp23017_address: '20' },
       ir:       { enabled: true,  profile: 'Xiaomi IR for TV box',      gpio_bcm: 27 },
       safety:   { safe_shutdown: true }
@@ -333,7 +333,7 @@ function applyPreferenceToVconfInstance(vconf, pref) {
   vconf.set('enableSpectrum', !!pref.display.spectrum);
   vconf.set('enableCava',     !!pref.display.spectrum); // legacy mirror
   vconf.set('display_screen', String(pref.display.screen || 'modern'));
-  vconf.set('display_rotate', String(pref.display.rotate ?? '0'));
+  vconf.set('display_rotate', String(pref.display.rotate ?? '180'));
 
   // buttons/LEDs
   vconf.set('enableButtonsLED', !!pref.controls.buttons_led_service);
@@ -496,7 +496,7 @@ ControllerQuadify.prototype.onVolumioStart = function () {
       oled_brightness: 200,
       // New UI keys
       enableSpectrum: true,
-      display_rotate: '0',
+      display_rotate: '180',
       enableIR: true,
       ir_remote_profile: '',
       ir_gpio_pin: 27,
@@ -601,11 +601,11 @@ ControllerQuadify.prototype.getUIConfig = function () {
 
     this.logger.info(
       `[Quadify] UI populate: screen=${pref.display.screen} modern=${pref.modern_spectrum_mode} -> ui=${screenForUi}, ` +
-      `rotate=${String(hwCfg.display_rotate ?? pref.display.rotate ?? '0')}, spectrum=${!!pref.display.spectrum}`
+      `rotate=${String(hwCfg.display_rotate ?? pref.display.rotate ?? '180')}, spectrum=${!!pref.display.spectrum}`
     );
 
     // ---- YAML truths (hardware) ----
-    const rotateWant = String(hwCfg.display_rotate ?? pref.display.rotate ?? '0');
+    const rotateWant = String(hwCfg.display_rotate ?? pref.display.rotate ?? '180');
     setSelect('display_settings', 'display_rotate', rotateWant); // dropdown
 
     setRaw   ('ir_controller',    'ir_gpio_pin',
@@ -1278,16 +1278,6 @@ ControllerQuadify.prototype.saveButtons_leds = function (data) {
   const self = this;
   const flat = getFlatConfig(data || {});
   self.logger.info('[Quadify] saveButtons_leds flat: ' + JSON.stringify(flat));
-
-  // helpers: UI uses hex-without-0x (e.g. "20")
-  const hexStrip0x = (s) => {
-    const t = String(s ?? '').trim().toLowerCase();
-    return t.startsWith('0x') ? t.slice(2) : t;
-  };
-  const hexNoPrefixToInt = (s, fb = 32) => {
-    const v = parseInt(hexStrip0x(s), 16);
-    return Number.isFinite(v) ? v : fb;
-  };
 
   // --- 1) Address handling (optional field) ---
   // Accept either flat.mcp23017_address or data.mcp23017_address; default to keep-as-is if absent

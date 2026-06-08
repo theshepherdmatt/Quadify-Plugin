@@ -75,13 +75,13 @@ def load_config(path: str) -> dict:
         return yaml.safe_load(f) or {}
 
 
-def turn_off_led8(log: logging.Logger) -> None:
+def turn_off_led8(log: logging.Logger, mcp_address: int = 0x20) -> None:
     try:
         import smbus2
         bus = smbus2.SMBus(1)
         try:
-            current = bus.read_byte_data(0x20, 0x12)
-            bus.write_byte_data(0x20, 0x12, current & 0b11111110)
+            current = bus.read_byte_data(mcp_address, 0x12)
+            bus.write_byte_data(mcp_address, 0x12, current & 0b11111110)
         finally:
             bus.close()
     except Exception as e:
@@ -224,7 +224,11 @@ def main():
                      name="Rotary").start()
 
     # 9. Cheap housekeeping while the splash is up.
-    turn_off_led8(log)
+    try:
+        mcp_addr = int(str(config.get("mcp23017_address", 0x20)), 0)
+    except (TypeError, ValueError):
+        mcp_addr = 0x20
+    turn_off_led8(log, mcp_addr)
 
     # 10. Build the full UI stack while the splash is still on screen.
     clock_config = config.get("clock", {})
