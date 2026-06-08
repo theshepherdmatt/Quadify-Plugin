@@ -426,6 +426,37 @@ ENV
   log "Shutdown helpers installed."
 }
 
+# =========================================
+# Samba: share the editable Quadify source repo
+# (Volumio already ships Samba — configure only, no install/enable)
+# =========================================
+configure_samba_share() {
+  log "Configuring Samba share for Quadify source repo…"
+
+  # 1) Append the [Quadify] share once (idempotent — never duplicate the block)
+  grep -q '^\[Quadify\]' /etc/samba/smb.conf || tee -a /etc/samba/smb.conf >/dev/null <<'EOF'
+
+[Quadify]
+        comment = Quadify Plugin source repo
+        path = /home/volumio/Quadify-Plugin
+        read only = no
+        guest ok = no
+        valid users = volumio
+        create mask = 0644
+        directory mask = 0755
+EOF
+
+  # 2) Set the SMB password for volumio non-interactively (share is guest ok = no).
+  #    -a re-runs cleanly on an existing user, so this stays idempotent.
+  (echo "volumio"; echo "volumio") | smbpasswd -s -a volumio
+
+  # 3) Validate config and reload (no full restart)
+  testparm -s
+  systemctl reload smbd nmbd
+
+  log "Samba [Quadify] share configured."
+}
+
 
 # Apply kernel overlays for the On/Off SHIM and install shutdown helpers
 configure_onoff_shim_overlays
@@ -561,6 +592,11 @@ if missing:
     print("Missing modules: " + ", ".join(missing))
     sys.exit(1)
 PY
+
+# -----------------------------
+# 10) Samba share for the editable source repo
+# -----------------------------
+run configure_samba_share
 
 log "Install complete. Reboot recommended."
 exit 0

@@ -16,7 +16,7 @@
   },
   "controls": {
     "buttons_led_service": true,
-    "mcp23017_address": "0x32"
+    "mcp23017_address": "20"
   },
   "ir": {
     "enabled": true,
