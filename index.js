@@ -638,22 +638,6 @@ ControllerQuadify.prototype.getUIConfig = function () {
 
     setRaw('safety_controls', 'safe_shutdown_enabled', !!pref.safety.safe_shutdown);
 
-    // ---- Legacy back-compat mirrors (safe no-ops if sections don't exist) ----
-    const flatConfig = getFlatConfig(this.config.get() || {});
-    if (flatConfig.mcp23017_address !== undefined) {
-      flatConfig.mcp23017_address = coerceHexAddr(flatConfig.mcp23017_address);
-    }
-    const legacyApply = (sectionId, keys) => {
-      const sec = uiconf.sections.find(s => s.id === sectionId);
-      if (!sec) return;
-      keys.forEach(k => {
-        const row = sec.content.find(c => c.id === k);
-        if (row && flatConfig[k] !== undefined) row.value = flatConfig[k];
-      });
-    };
-    legacyApply('display_controls', ['display_mode', 'enableCava', 'enableButtonsLED']);
-    legacyApply('mcp23017_config',  ['mcp23017_address']);
-
     return uiconf;
   };
 
