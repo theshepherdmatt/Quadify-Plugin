@@ -22,18 +22,8 @@ const CONFIG_PATH = path.join(CONFIG_DIR, 'config.json');
 const USERCONFIG_TXT  = '/boot/userconfig.txt';
 const IR_OVERLAY_LINE = 'dtoverlay=gpio-ir,gpio_pin=27';
 
-// Preference path candidates (src first; keep scr as legacy fallback)
-const PREF_CANDIDATES = [
-  path.join(PLUGIN_ROOT, 'quadifyapp', 'src', 'preference.json'),
-  path.join(PLUGIN_ROOT, 'quadifyapp', 'scr', 'preference.json')
-];
-
 // Buttons & LEDs service candidates
 const BUTTONSLEDS_UNIT_CANDIDATES = ['quadify-buttonsleds'];
-
-// Safe-shutdown units we manage
-const SAFE_SHUTDOWN_UNIT_CANDIDATES = ['clean-poweroff', 'volumio-clean-poweroff']; // support old/new names
-const LEDSOFF_UNIT = 'quadify-leds-off';
 
 // LIRC filesystem
 const LIRC_PROFILES_DIR = path.join(PLUGIN_ROOT, 'quadifyapp', 'lirc', 'configurations');
@@ -51,13 +41,6 @@ async function atomicWriteJSON(file, obj) {
   await ensureDir(path.dirname(file));
   await fs.writeJson(tmp, obj, { spaces: 2 });
   await fs.move(tmp, file, { overwrite: true });
-}
-
-async function resolvePreferencePath() {
-  for (const p of PREF_CANDIDATES) {
-    if (await fs.pathExists(p)) return p;
-  }
-  return PREF_CANDIDATES[0];
 }
 
 // ----- High-signal diagnostics -----
@@ -157,11 +140,6 @@ function hexNoPrefixToInt(s, fb = 32) {
   return Number.isFinite(v) ? v : fb;
 }
 
-function intToHexNoPrefix(n) {
-  return (Number.isFinite(+n) ? (+n).toString(16) : '20');
-}
-
-
 // Map canonical display.screen → legacy flat keys
 function screenToLegacy(screen, prevRaw = {}) {
   const s = String(screen || '').toLowerCase();
@@ -232,40 +210,6 @@ function mergedCanonicalWithMinimalMirrors(raw, canonical) {
 // --- prefs IO (preserve top-level keys) ---
 const PREF_PATH = path.join(__dirname, 'quadifyapp', 'src', 'preference.json');
 const PREF_TMP  = PREF_PATH + '.tmp';
-
-const PREF_NESTED_DEFAULTS = {
-  display:  { spectrum: true, screen: 'modern', rotate: 180, oled_brightness: 255 },
-  controls: { buttons_led_service: true, mcp23017_address: '20' },
-  ir:       { enabled: true, profile: 'Xiaomi IR for TV box', gpio_bcm: 27 },
-  safety:   { safe_shutdown: true }
-};
-
-function readPrefsRaw() {
-  try { return JSON.parse(fs.readFileSync(PREF_PATH, 'utf8')) || {}; }
-  catch { return {}; }
-}
-
-function normaliseNested(p) {
-  p.display  = Object.assign({}, PREF_NESTED_DEFAULTS.display,  p.display  || {});
-  p.controls = Object.assign({}, PREF_NESTED_DEFAULTS.controls, p.controls || {});
-  p.ir       = Object.assign({}, PREF_NESTED_DEFAULTS.ir,       p.ir       || {});
-  p.safety   = Object.assign({}, PREF_NESTED_DEFAULTS.safety,   p.safety   || {});
-  return p;
-}
-
-// Atomic writer that DOES NOT drop unrelated top-level keys
-function writePrefsRaw(obj) {
-  fs.writeFileSync(PREF_TMP, JSON.stringify(obj, null, 2));
-  fs.moveSync(PREF_TMP, PREF_PATH, { overwrite: true });
-}
-
-
-function coerceHexAddrSimple(v) {
-  if (v == null || v === '') return '20';
-  let s = String(v).trim().toLowerCase();
-  if (!s.startsWith('0x')) s = '0x' + s;
-  return s;
-}
 
 // Read the raw JSON as-is (may contain both top-level + nested keys)
 async function loadRawPreferenceJSON() {
@@ -962,21 +906,6 @@ ControllerQuadify.prototype.controlButtonsLeds = function (enable) {
     });
 };
 
-ControllerQuadify.prototype.enforceButtonsFromPreference = async function () {
-  try {
-    const hwCfg = this.loadConfigYaml();
-    const pref  = await getCanonicalPreference(hwCfg);
-    const want  = !!pref.controls?.buttons_led_service;
-
-    await this.detectButtonsLedsUnit();
-    await this.controlButtonsLeds(want);
-
-    this.logger.info(`[Quadify] Buttons/LEDs boot enforce → ${want ? 'ON' : 'OFF'}`);
-  } catch (e) {
-    this.logger.warn('[Quadify] enforceButtonsFromPreference failed: ' + (e?.message || e));
-  }
-};
-
 ControllerQuadify.prototype.controlSafeShutdown = async function (enable) {
   const candidates = ['quadify-leds-off', 'clean-poweroff', 'volumio-clean-poweroff'];
   const existing = [];
@@ -993,60 +922,6 @@ ControllerQuadify.prototype.controlSafeShutdown = async function (enable) {
 
 
 // ---------- MCP23017 / YAML ----------
-ControllerQuadify.prototype.updateMcpConfig = function (data) {
-  const self = this;
-
-  // --- helpers: UI uses hex-without-0x (e.g. "20") ---
-  const hexStrip0x = (s) => {
-    const t = String(s ?? '').trim().toLowerCase();
-    return t.startsWith('0x') ? t.slice(2) : t;
-  };
-  const hexNoPrefixToInt = (s, fb = 32) => {
-    const v = parseInt(hexStrip0x(s), 16);
-    return Number.isFinite(v) ? v : fb;
-  };
-
-  // 1) Read UI value (hex, no prefix). Default "20" (=> 20).
-  const rawUi = data?.mcp23017_address;
-  const hexUi = hexStrip0x(rawUi || '20');   // e.g. "20"
-  const i2cInt = hexNoPrefixToInt(hexUi, 32); // e.g. 32
-
-  // 2) YAML (daemon) wants a NUMBER
-  const cfg = self.loadConfigYaml();
-  cfg.mcp23017_address = i2cInt; // numeric for Python
-  self.saveConfigYaml(cfg);
-  self.logger.info(`[Quadify][YAML] mcp23017_address <= ${i2cInt} (from UI ${hexUi})`);
-
-  // 3) v-conf/UI mirror stores *no-prefix hex* (e.g. "20")
-  self.config.set('mcp23017_address', hexUi);
-  self.config.save();
-
-  self.commandRouter.pushToastMessage('success', 'Quadify', `MCP23017 address saved: ${hexUi}`);
-
-  // 4) preference.json: keep controls.mcp23017_address as *no-prefix hex* "20"
-  const hwCfg = self.loadConfigYaml();
-  return loadRawPreferenceJSON()
-    .then(raw => {
-      const canonical = buildCanonicalFromAny(raw, hwCfg);
-      canonical.controls.mcp23017_address = hexUi; // store "20", not "20"
-      return saveCanonicalPreference(withFlatMirrors(raw, canonical));
-    })
-    .then(async () => {
-      // 5) Restart the daemon so it re-reads YAML immediately
-      await self.detectButtonsLedsUnit();
-      if (self.buttonsLedsUnit) {
-        self.logger.info(`[Quadify][SYSD] restart ${self.buttonsLedsUnit}.service to apply new I2C addr`);
-        return pExec(`${SUDO} -n ${SYSTEMCTL} restart ${self.buttonsLedsUnit}.service`, self.logger)
-          .fail(() => libQ.resolve());
-      }
-    })
-    .then(() => ({}))
-    .catch(e => {
-      self.logger.warn('[Quadify] pref sync after updateMcpConfig: ' + (e?.message || e));
-      return {};
-    });
-};
-
 ControllerQuadify.prototype.autoDetectMCP = function () {
   const defer = libQ.defer();
 
@@ -1142,8 +1017,6 @@ ControllerQuadify.prototype.restartQuadify = function () {
       throw err;
     });
 };
-
-ControllerQuadify.prototype.updateRotaryConfig = function () { return libQ.resolve(); };
 
 ControllerQuadify.prototype.refreshIRRemotes = async function () {
   try {
@@ -1590,25 +1463,6 @@ ControllerQuadify.prototype.detectButtonsLedsUnit = function () {
     }
     return self.buttonsLedsUnit;
   });
-};
-
-
-ControllerQuadify.prototype.applyAllServiceToggles = function () {
-  const flatConfig = getFlatConfig(this.config.get() || {});
-  const spectrumOn = logicValue(
-    (flatConfig.enableSpectrum !== undefined ? flatConfig.enableSpectrum : flatConfig.enableCava)
-  );
-  const buttonsOn = logicValue(flatConfig.enableButtonsLED);
-  const irOn      = logicValue(flatConfig.enableIR);
-  const safeOn    = logicValue(flatConfig.safe_shutdown_enabled); // NEW
-
-  return libQ.allSettled([
-    this.cavaStartStop(spectrumOn),
-    this.controlButtonsLeds(buttonsOn),
-    this.controlService('lircd', irOn),
-    this.controlService('ir_listener', irOn),
-    this.controlSafeShutdown(safeOn) // NEW
-  ]);
 };
 
 
