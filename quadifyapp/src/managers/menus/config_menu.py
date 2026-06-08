@@ -16,7 +16,6 @@ class ConfigMenu(BaseManager):
       - Display Modes -> (VU-Meters -> Modern-VU Styles) | Simple
       - Brightness
       - Screensaver -> (Timer)
-      - Update (hands off to SystemUpdateMenu)
     """
 
     def __init__(
@@ -121,8 +120,6 @@ class ConfigMenu(BaseManager):
                 {"title": "Clock",         "type": "action",  "action": "open_clock"},
                 {"title": "Brightness",    "type": "submenu", "submenu": "brightness"},
                 {"title": "Screensaver",   "type": "submenu", "submenu": "screensaver"},
-                # Hand off to SystemUpdateMenu (no local submenu here)
-                {"title": "Update",        "type": "action",  "action": "open_update_menu"},
                 {"title": "Back",          "type": "back"},
             ]
 
@@ -270,11 +267,6 @@ class ConfigMenu(BaseManager):
                 self._go_to_main()
                 return
 
-            elif action == "open_update_menu":
-                # Hand off to SystemUpdateMenu
-                self._open_update_menu()
-                return
-
             else:
                 self.logger.warning("ConfigMenu: Unknown action %r", action)
                 return
@@ -327,35 +319,6 @@ class ConfigMenu(BaseManager):
                 self.logger.exception("ConfigMenu: clock_menu.start_mode() failed: %s", e)
 
         self.logger.warning("ConfigMenu: ClockMenu not available on ModeManager.")
-
-    def _open_update_menu(self):
-        """
-        Hand off to SystemUpdateMenu (system_update_menu.py).
-        Prefer FSM transition if available.
-        """
-        self.logger.info("ConfigMenu: Opening System Update menu...")
-        # Stop ourselves for a clean handoff
-        self.stop_mode()
-
-        # Preferred: FSM transition
-        to_update = getattr(self.mode_manager, "to_systemupdate", None)
-        if callable(to_update):
-            try:
-                to_update()
-                return
-            except Exception as e:
-                self.logger.exception("ConfigMenu: to_systemupdate() failed: %s", e)
-
-        # Fallback: call instance directly
-        update_menu = getattr(self.mode_manager, "system_update_menu", None)
-        if update_menu and hasattr(update_menu, "start_mode"):
-            try:
-                update_menu.start_mode()
-                return
-            except Exception as e:
-                self.logger.exception("ConfigMenu: system_update_menu.start_mode() failed: %s", e)
-
-        self.logger.warning("ConfigMenu: SystemUpdateMenu not available on ModeManager.")
 
     def _toggle_spectrum(self):
         self.spectrum_enabled = not self.spectrum_enabled

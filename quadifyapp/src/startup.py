@@ -175,8 +175,6 @@ class CommandDispatcher:
             mm.menu_manager.scroll_selection(direction)
         elif current_mode == "configmenu":
             mm.config_menu.scroll_selection(direction)
-        elif current_mode == "systemupdate":
-            mm.system_update_menu.scroll_selection(direction)
         elif current_mode == "clockmenu":
             mm.clock_menu.scroll_selection(direction)
         elif current_mode == "screensavermenu":
@@ -196,8 +194,6 @@ class CommandDispatcher:
             mm.menu_manager.select_item(); return
         if current_mode == "configmenu":
             mm.config_menu.select_item(); return
-        if current_mode == "systemupdate":
-            mm.system_update_menu.select_item(); return
         if current_mode == "screensavermenu":
             mm.screensaver_menu.select_item(); return
         if current_mode == "clockmenu":

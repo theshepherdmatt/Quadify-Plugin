@@ -31,7 +31,6 @@ class ModeManager:
         {'name': 'vuscreen',        'on_enter': 'enter_vuscreen'},
         {'name': 'digitalvuscreen', 'on_enter': 'enter_digitalvuscreen'},
         {'name': 'configmenu',      'on_enter': 'enter_configmenu'},
-        {'name': 'systemupdate',    'on_enter': 'enter_systemupdate'},
         {'name': 'menu',            'on_enter': 'enter_menu', 'on_exit': 'cancel_menu_inactivity_timer'},
         {'name': 'remotemenu',      'on_enter': 'enter_remotemenu'},
 
@@ -100,7 +99,6 @@ class ModeManager:
         self.screensaver = None
         self.screensaver_menu = None
         self.clock_menu = None
-        self.system_update_menu = None
         self.radio_manager = None
 
         # Lazy-load registry: attr_name -> zero-arg factory callable.
@@ -351,9 +349,6 @@ class ModeManager:
     def set_screensaver_menu(self, screensaver_menu):
         self.screensaver_menu = screensaver_menu
 
-    def set_system_update_menu(self, system_update_menu):
-        self.system_update_menu = system_update_menu
-
     # --- State-Suppression Logic ---
     def suppress_state_change(self):
         with self.lock:
@@ -414,7 +409,6 @@ class ModeManager:
         self.machine.add_transition('to_modern',       source='*', dest='modern', before='push_current_state')
         self.machine.add_transition('to_minimal',      source='*', dest='minimal', before='push_current_state')
         self.machine.add_transition('to_vuscreen',     source='*', dest='vuscreen', before='push_current_state')
-        self.machine.add_transition('to_systemupdate', source='*', dest='systemupdate', before='push_current_state')
         self.machine.add_transition('to_radio',        source='*', dest='radio', before='push_current_state')
         self.machine.add_transition('to_menu',         source='*', dest='menu', before='push_current_state')
 
@@ -482,9 +476,7 @@ class ModeManager:
             self.digitalvu_screen.stop_mode()
         if self.webradio_screen and self.webradio_screen.is_active:
             self.webradio_screen.stop_mode()
-        if self.system_update_menu and self.system_update_menu.is_active:
-            self.system_update_menu.stop_mode()
-            
+
     def start_menu_inactivity_timer(self):
         if self.get_mode() in ["library", "tidal", "qobuz", "spotify"]:
             self.logger.debug("ModeManager: Inactivity timer skipped for '%s' mode.", self.get_mode())
@@ -638,18 +630,6 @@ class ModeManager:
             self.logger.info("ModeManager: Clock menu started.")
         else:
             self.logger.warning("ModeManager: No clock_menu set.")
-        self.reset_idle_timer()
-        self.start_menu_inactivity_timer()
-        self.update_current_mode()
-
-    def enter_systemupdate(self, event):
-        self.logger.info("ModeManager: Entering 'systemupdate' mode.")
-        self.stop_all_screens()
-        if self.system_update_menu:
-            self.system_update_menu.start_mode()
-            self.logger.info("ModeManager: SystemUpdateMenu started.")
-        else:
-            self.logger.warning("ModeManager: No system_update_menu set.")
         self.reset_idle_timer()
         self.start_menu_inactivity_timer()
         self.update_current_mode()

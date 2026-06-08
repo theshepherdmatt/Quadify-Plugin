@@ -38,7 +38,7 @@ def process_key(key, current_mode):
         if current_mode in [
             "menu","streaming","tidal","qobuz","spotify","library","radiomanager",
             "playlists","screensaver","configmenu","clockmenu","screensavermenu",
-            "systemupdate","radioparadise","motherearthradio"
+            "radioparadise","motherearthradio"
         ]:
             send_command("select")
         elif current_mode in ["clock", "screensaver"]:
@@ -77,7 +77,7 @@ def process_key(key, current_mode):
             send_command("seek_plus")
         elif current_mode in [
             "streaming","tidal","qobuz","spotify","library","playlists","radiomanager",
-            "displaymenu","clockmenu","configmenu","screensavermenu","systemupdate",
+            "displaymenu","clockmenu","configmenu","screensavermenu",
             "radioparadise","motherearthradio"
         ]:
             send_command("scroll_up")
@@ -87,7 +87,7 @@ def process_key(key, current_mode):
             send_command("seek_minus")
         elif current_mode in [
             "streaming","tidal","qobuz","spotify","library","playlists","radiomanager",
-            "displaymenu","clockmenu","configmenu","screensavermenu","systemupdate",
+            "displaymenu","clockmenu","configmenu","screensavermenu",
             "radioparadise","motherearthradio"
         ]:
             send_command("scroll_down")

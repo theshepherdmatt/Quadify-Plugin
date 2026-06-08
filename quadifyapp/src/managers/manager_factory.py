@@ -48,7 +48,6 @@ class ManagerFactory:
         self.mode_manager.set_config_menu(self.create_config_menu())
         self.mode_manager.set_clock_menu(self.create_clock_menu())
         self.mode_manager.set_screensaver_menu(self.create_screensaver_menu())
-        self.mode_manager.set_system_update_menu(self.create_system_update_menu())
         self.mode_manager.set_library_manager(self.create_library_manager())
         self.mode_manager.set_streaming_manager(
             self.create_streaming_manager(service_name="tidal", root_uri="tidal://")
@@ -229,12 +228,3 @@ class ManagerFactory:
                 display_manager=self.display_manager,
                 update_interval=0.05
             )
-
-
-    def create_system_update_menu(self):
-        from .menus.system_update_menu import SystemUpdateMenu
-        return SystemUpdateMenu(
-            display_manager = self.display_manager,
-            mode_manager    = self.mode_manager,
-            menu_controller = self.menu_manager
-        )
