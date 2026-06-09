@@ -24,6 +24,10 @@ class DisplayManager:
             ch.setLevel(logging.DEBUG)
             ch.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
             self.logger.addHandler(ch)
+        # Own handler above means main.py's root handler must NOT also emit, or
+        # every line prints twice in the journal. Keep the handler (so the
+        # standalone splash service still logs) but stop propagation to root.
+        self.logger.propagate = False
 
         # --- Load YAML ---
         self.yaml_path = yaml_path or os.environ.get(

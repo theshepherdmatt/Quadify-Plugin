@@ -191,8 +191,18 @@ class VolumioListener:
                 self.sources_changed.send(self, sources=data)
 
     def schedule_reconnect(self):
-        """Schedule a reconnection attempt."""
-        delay = min(self.reconnect_delay * self._reconnect_attempt, 60)
+        """Schedule a reconnection attempt.
+
+        At boot Volumio's API server comes up several seconds after our
+        process, so the first connects always fail with 'connection refused'.
+        Retry fast (1s) for the first ~10 attempts so we latch on the instant
+        it's ready, then fall back to the growing backoff so a genuinely-down
+        server isn't hammered.
+        """
+        if self._reconnect_attempt <= 10:
+            delay = 1
+        else:
+            delay = min(self.reconnect_delay * (self._reconnect_attempt - 10), 60)
         self.logger.info(f"[VolumioListener] Reconnecting in {delay} seconds...")
         threading.Thread(target=self._reconnect_after_delay, args=(delay,), daemon=True).start()
 
