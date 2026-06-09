@@ -17,13 +17,16 @@ class VolumioListener:
         """
         self.logger = logging.getLogger("VolumioListener")
 
-        self.logger.setLevel(logging.DEBUG)  # Set to DEBUG for detailed logs
+        self.logger.setLevel(logging.INFO)  # DEBUG floods the journal with full state/sources dumps
         self.logger.debug("[VolumioListener] Initializing...")
 
         self.host = host
         self.port = port
         self.reconnect_delay = reconnect_delay
-        self.socketIO = socketio.Client(logger=False, engineio_logger=False, reconnection=True)
+        # reconnection=False: we run our own reconnect (schedule_reconnect) with a
+        # boot-fast-retry backoff. Leaving the library's reconnect on too means two
+        # engines race on a dropped connection. Our manual path is the single source.
+        self.socketIO = socketio.Client(logger=False, engineio_logger=False, reconnection=False)
 
         # Define Blinker signals
         self.connected = Signal('connected')
@@ -185,10 +188,6 @@ class VolumioListener:
             mode_manager = getattr(self, "mode_manager", None)
             if mode_manager is not None and mode_manager.get_mode() == "menu":
                 self.menu_manager.display_menu()
-        else:
-            # Or use a signal if you wire it that way
-            if hasattr(self, "sources_changed"):
-                self.sources_changed.send(self, sources=data)
 
     def schedule_reconnect(self):
         """Schedule a reconnection attempt.
@@ -214,22 +213,14 @@ class VolumioListener:
             self.connect()
 
     def on_push_state(self, data):
-        self.logger.info("[VolumioListener] Received pushState event.")
+        # DEBUG, not INFO: Volumio emits pushState roughly every second while
+        # playing (seek progress), which floods the journal at INFO.
+        self.logger.debug("[VolumioListener] Received pushState event.")
         with self.state_lock:
             self.current_state = data  # Store the current state
             if "volume" in data:
                 self.current_volume = data["volume"]
         self.state_changed.send(self, state=data)
-
-    def extract_streaming_services(self, navigation):
-        STREAMING_SERVICES = {"tidal", "qobuz", "spotify"}
-        found = []
-        lists = navigation.get("lists", [])
-        for item in lists:
-            name = item.get("plugin_name", "").lower()
-            if name in STREAMING_SERVICES:
-                found.append(name)
-        return found
 
     def on_push_browse_library(self, data):
         self.logger.info("[VolumioListener] Received pushBrowseLibrary event.")
