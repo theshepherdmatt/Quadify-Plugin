@@ -1,6 +1,10 @@
+import os
 import time
 import threading
 from PIL import Image, ImageDraw
+
+from startup import is_clock_synced
+
 
 class Clock:
     def __init__(self, display_manager, config, volumio_listener):
@@ -9,6 +13,12 @@ class Clock:
         self.config = config
         self.running = False
         self.thread = None
+
+        # Time-trust gate: never paint a pre-sync (e.g. 1970) time. Latches
+        # True once the system clock is NTP-synced, after which we stop
+        # checking; until then render_clock_image() returns a placeholder.
+        self._time_trusted = False
+        self._waiting_img = None
 
         self.font_y_offsets = {
             "clock_sans":    -15,
@@ -30,7 +40,20 @@ class Clock:
         }
 
     def render_clock_image(self, offset_x=0):
-        """Create a PIL image of the current clock (with optional horizontal offset)."""
+        """Create a PIL image of the current clock (with optional horizontal offset).
+
+        Until the system clock is trustworthy (NTP-synced), this returns a
+        neutral placeholder instead of the time, so NO caller — the update
+        loop, transitions, or any to_clock() route (incl. the pause/stop
+        timer) — can paint a wrong, pre-sync time. Gating here covers every
+        render path in one place.
+        """
+        if not self._time_trustworthy():
+            return self._waiting_image(
+                self.display_manager.oled.width,
+                self.display_manager.oled.height,
+                offset_x,
+            )
         time_font_key = self.config.get("clock_font_key", "clock_digital")
         if time_font_key not in self.display_manager.fonts:
             time_font_key = "clock_digital"
@@ -79,6 +102,57 @@ class Clock:
                 y_cursor += line_gap
 
         return img
+
+    def _time_trustworthy(self):
+        """Latch True once the system clock is NTP-synced; never re-check after.
+        Avoids spawning timedatectl every second for the process lifetime, and
+        guarantees the clock never renders a pre-sync (e.g. 1970) time."""
+        if self._time_trusted:
+            return True
+        if is_clock_synced():
+            self._time_trusted = True
+            print("Clock: system time trustworthy; rendering live time.")
+        return self._time_trusted
+
+    def _placeholder_path(self):
+        """Resolve the boot 'getting ready' image: network.png beside the logo,
+        else the logo itself. Returns None if neither is configured/present."""
+        dm = self.display_manager
+        logo = dm._dget("logo_path") if hasattr(dm, "_dget") else None
+        if not logo:
+            return None
+        net = os.path.join(os.path.dirname(logo), "network.png")
+        if os.path.isfile(net):
+            return net
+        return logo if os.path.isfile(logo) else None
+
+    def _waiting_image(self, w, h, offset_x=0):
+        """Placeholder shown until the clock is trustworthy (keeps the boot
+        'getting ready' image on screen instead of a wrong time). Built once
+        and cached; falls back to a blank frame if no image is available."""
+        if self._waiting_img is None:
+            base = Image.new("RGB", (w, h), "black")
+            path = self._placeholder_path()
+            if path:
+                try:
+                    ph = Image.open(path)
+                    if ph.mode == "RGBA":
+                        bg = Image.new("RGB", ph.size, (0, 0, 0))
+                        bg.paste(ph, mask=ph.split()[3])
+                        ph = bg
+                    else:
+                        ph = ph.convert("RGB")
+                    if ph.size != (w, h):
+                        ph = ph.resize((w, h), Image.LANCZOS)
+                    base = ph
+                except Exception:
+                    pass
+            self._waiting_img = base
+        if offset_x:
+            shifted = Image.new("RGB", (w, h), "black")
+            shifted.paste(self._waiting_img, (offset_x, 0))
+            return shifted
+        return self._waiting_img
 
     def draw_clock(self, offset_x=0):
         """Draw the clock at a specified horizontal offset (for animation)."""

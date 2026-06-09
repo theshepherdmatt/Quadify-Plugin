@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import sys
+import time
 import yaml
 from smbus2 import SMBus
 
@@ -57,18 +58,28 @@ def load_mcp_addr():
 
     return DEFAULT_ADDR
 
+# Boot indicator LED. NOTE: the original red LED8 (GPIOA A0) is dead hardware
+# on this unit, so we use LED2 (A6) instead. All LEDs are ACTIVE-HIGH, so drive
+# A6 high to light it. (0b01000000 = bit6 = A6 = LED2.)
+BOOT_LED_BIT = 0b01000000
+
 def main():
     addr = load_mcp_addr()
-    try:
-        with SMBus(1) as bus:
-            # Port A as outputs
-            bus.write_byte_data(addr, IODIRA, 0x00)
-            # Turn LED8 ON (bit 0 = 1)
-            bus.write_byte_data(addr, GPIOA, 0b00000001)
-        print(f"early_led8: LED8 ON at MCP23017 0x{addr:02X}")
-    except Exception as e:
-        print(f"early_led8: failed at 0x{addr:02X}: {e}")
-        sys.exit(1)
+    # Runs ultra-early (sysinit), so the I2C bus may not be ready for the first
+    # moment — retry briefly instead of giving up on the first failure.
+    last_err = None
+    for _ in range(20):                       # up to ~10s
+        try:
+            with SMBus(1) as bus:
+                bus.write_byte_data(addr, IODIRA, 0x00)        # Port A => outputs
+                bus.write_byte_data(addr, GPIOA, BOOT_LED_BIT)  # LED2 (A6) ON
+            print(f"early_led8: boot LED (LED2/A6) ON at MCP23017 0x{addr:02X}")
+            return
+        except Exception as e:
+            last_err = e
+            time.sleep(0.5)
+    print(f"early_led8: failed at 0x{addr:02X}: {last_err}")
+    sys.exit(1)
 
 if __name__ == "__main__":
     main()

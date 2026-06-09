@@ -22,13 +22,12 @@ from startup import (
     BootCoordinator,
     CommandDispatcher,
     start_command_server,
-    wait_for_network_and_clock,
+    wait_for_trustworthy_clock,
 )
 
 
 CONFIG_PATH = "/data/plugins/system_hardware/quadify/quadifyapp/config.yaml"
 SPLASH_MAX_WAIT = 4.0  # hard cap before we assume Volumio isn't going to talk
-NETWORK_READY_TIMEOUT = 60.0  # cap before we land on clock with possibly-wrong time
 
 
 def _draw_full_image(display_manager, log, path: str) -> bool:
@@ -74,18 +73,6 @@ def load_config(path: str) -> dict:
     with open(path, "r") as f:
         return yaml.safe_load(f) or {}
 
-
-def turn_off_led8(log: logging.Logger, mcp_address: int = 0x20) -> None:
-    try:
-        import smbus2
-        bus = smbus2.SMBus(1)
-        try:
-            current = bus.read_byte_data(mcp_address, 0x12)
-            bus.write_byte_data(mcp_address, 0x12, current & 0b11111110)
-        finally:
-            bus.close()
-    except Exception as e:
-        log.debug("LED8 off skipped: %s", e)
 
 
 def make_rotary_handlers(mode_manager):
@@ -223,12 +210,10 @@ def main():
     threading.Thread(target=rotary_control.start, daemon=True,
                      name="Rotary").start()
 
-    # 9. Cheap housekeeping while the splash is up.
-    try:
-        mcp_addr = int(str(config.get("mcp23017_address", 0x20)), 0)
-    except (TypeError, ValueError):
-        mcp_addr = 0x20
-    turn_off_led8(log, mcp_addr)
+    # 9. The early-boot LED (LED2, lit by early_led8.service) is deliberately
+    #    left alone here: the buttons/LEDs daemon owns it and keeps it on until
+    #    Volumio reports play/pause/stop, so the indicator never blinks off
+    #    between boot and the first Volumio state. main.py no longer touches it.
 
     # 10. Build the full UI stack while the splash is still on screen.
     clock_config = config.get("clock", {})
@@ -260,26 +245,26 @@ def main():
     state = handoff["state"] or {}
     status = (state.get("status") or "").lower()
 
+    # Route the first state: a play-state goes straight to the now-playing
+    # screen (it doesn't depend on the clock). Any buffered non-play state is
+    # replayed so first_state_handoff is consumed cleanly (otherwise the next
+    # real event still thinks it's first). ModeManager's own pushState handler
+    # has usually routed already in the play case.
     if status == "play":
-        # ModeManager's own pushState handler usually routed to the right
-        # playback screen already. If we missed the live event (state was only
-        # in the listener's buffer), replay it now.
         if mode_manager.get_mode() == "boot":
             mode_manager.process_state_change(volumio_listener, state)
-        if mode_manager.get_mode() == "boot":
-            mode_manager.to_clock()  # safety net: somehow nothing routed
-    else:
-        # stop / pause / unknown / no-state-at-all → land on the clock face.
-        # Before showing the clock we want network up AND NTP synced,
-        # otherwise the clock would briefly display whatever stale time
-        # the Pi booted with (often 1970 on a unit without an RTC).
-        # network.png stays on the OLED across this wait.
-        wait_for_network_and_clock(NETWORK_READY_TIMEOUT, logger=log)
-        # Replay the buffered state first so first_state_handoff is consumed
-        # cleanly (otherwise the next real event still thinks it's first).
-        if state:
-            mode_manager.process_state_change(volumio_listener, state)
-        if mode_manager.get_mode() == "boot":
+    elif state:
+        mode_manager.process_state_change(volumio_listener, state)
+
+    # If we're still on the boot placeholder we're headed for the clock — but
+    # NEVER show it with an untrustworthy (pre-NTP) time. Hold the placeholder
+    # (network.png stays on the OLED) until the clock is synced. If a play-state
+    # arrives mid-wait, ModeManager routes us off 'boot' and we skip the clock.
+    # Deliberately NO timeout: an idle, never-synced unit keeps the placeholder
+    # rather than show a wrong time.
+    if mode_manager.get_mode() == "boot":
+        outcome = wait_for_trustworthy_clock(mode_manager, logger=log)
+        if outcome == "synced" and mode_manager.get_mode() == "boot":
             mode_manager.to_clock()
 
     # 9. Live UI: route real input through the dispatcher / mode_manager.
