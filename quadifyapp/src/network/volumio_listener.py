@@ -174,11 +174,17 @@ class VolumioListener:
         self.logger.info("[VolumioListener] Received pushBrowseSources event.")
         # Optionally: log the new sources for debug
         self.logger.debug(f"[VolumioListener] Sources: {data}")
-        # Now trigger your menu to refresh.
-        # This could be via a direct reference, signal, or callback—see below!
+        # Keep the home-menu data current so it's right when the user opens it,
+        # but only repaint the OLED if the menu is actually on screen. Volumio
+        # fires pushBrowseSources unsolicited (at boot, and whenever sources
+        # change); painting unconditionally drew the icon menu over whatever was
+        # showing — the clock or a playback screen — for a frame, which is the
+        # brief clock->menu->clock flash. Refresh always; draw only in "menu".
         if hasattr(self, "menu_manager"):
             self.menu_manager.refresh_main_menu()
-            self.menu_manager.display_menu()
+            mode_manager = getattr(self, "mode_manager", None)
+            if mode_manager is not None and mode_manager.get_mode() == "menu":
+                self.menu_manager.display_menu()
         else:
             # Or use a signal if you wire it that way
             if hasattr(self, "sources_changed"):
