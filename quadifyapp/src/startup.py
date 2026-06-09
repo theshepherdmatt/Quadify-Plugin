@@ -233,6 +233,8 @@ class CommandDispatcher:
             mm.streaming_manager.scroll_selection(direction)
         elif current_mode == "screensaver":
             mm.exit_screensaver()
+        elif current_mode == "sleep":
+            mm.wake_from_sleep()
 
     @staticmethod
     def _handle_select(mm, current_mode) -> None:
@@ -259,6 +261,8 @@ class CommandDispatcher:
             mm.trigger("to_menu"); return
         if current_mode == "screensaver":
             mm.exit_screensaver(); return
+        if current_mode == "sleep":
+            mm.wake_from_sleep(); return
 
 
 # --------------------------- IPC server ---------------------------

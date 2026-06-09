@@ -22,6 +22,7 @@ class ModeManager:
         {'name': 'boot',            'on_enter': 'enter_boot'},
         {'name': 'clock',           'on_enter': 'enter_clock'},
         {'name': 'screensaver',     'on_enter': 'enter_screensaver'},
+        {'name': 'sleep',           'on_enter': 'enter_sleep', 'on_exit': 'exit_sleep'},
         {'name': 'screensavermenu', 'on_enter': 'enter_screensavermenu'},
         {'name': 'displaymenu',     'on_enter': 'enter_displaymenu'},
         {'name': 'clockmenu',       'on_enter': 'enter_clockmenu'},
@@ -81,6 +82,7 @@ class ModeManager:
         for key in (
             "display_mode", "clock_font_key", "show_seconds", "show_date",
             "screensaver_enabled", "screensaver_type", "screensaver_timeout",
+            "oled_sleep_timeout",
             "oled_brightness", "cava_enabled", "modern_spectrum_mode",
         ):
             self.config[key] = preferences[key]
@@ -110,6 +112,10 @@ class ModeManager:
         # Idle/Screensaver logic
         self.idle_timer = None
         self.idle_timeout = self.config.get("screensaver_timeout", 60)
+        # Deep sleep: after the screensaver has run for this long, power the OLED
+        # panel off entirely until play resumes or the user interacts. 0 = off.
+        self.sleep_timer = None
+        self.sleep_timeout = self.config.get("oled_sleep_timeout", 0)
 
         self.suppress_state_changes = False
         self.current_status = None
@@ -228,6 +234,7 @@ class ModeManager:
             "screensaver_enabled",
             "screensaver_type",
             "screensaver_timeout",
+            "oled_sleep_timeout",
             "oled_brightness",
             "cava_enabled",
             "modern_spectrum_mode",
@@ -284,6 +291,7 @@ class ModeManager:
             "screensaver_enabled": False,
             "screensaver_type": "none",
             "screensaver_timeout": 120,
+            "oled_sleep_timeout": 600,
             "oled_brightness": 100,
             "cava_enabled": False,
         }
@@ -396,12 +404,36 @@ class ModeManager:
             else:
                 self.logger.debug(f"ModeManager: Idle in '{current_mode}', not going to screensaver.")
 
+    # --- Deep-sleep timer (OLED off after the screensaver has run a while) ---
+    def _start_sleep_timer(self):
+        # Re-read each time so a config change takes effect without a restart.
+        self.sleep_timeout = self.config.get("oled_sleep_timeout", 0)
+        self._cancel_sleep_timer()
+        if self.sleep_timeout <= 0:
+            return
+        self.sleep_timer = threading.Timer(self.sleep_timeout, self._sleep_timeout_reached)
+        self.sleep_timer.daemon = True
+        self.sleep_timer.start()
+        self.logger.debug(f"ModeManager: Sleep timer started for {self.sleep_timeout}s.")
+
+    def _cancel_sleep_timer(self):
+        if self.sleep_timer:
+            self.sleep_timer.cancel()
+            self.sleep_timer = None
+
+    def _sleep_timeout_reached(self):
+        with self.lock:
+            if self.get_mode() == "screensaver":
+                self.logger.debug("ModeManager: Sleep timeout => to_sleep (OLED off).")
+                self.to_sleep()
+
     # --- Transitions Definition ---
     def _define_transitions(self):
         # Each transition gets before='push_current_state'
         self.machine.add_transition('to_boot',         source='*', dest='boot', before='push_current_state')
         self.machine.add_transition('to_clock',        source='*', dest='clock', before='push_current_state')
         self.machine.add_transition('to_screensaver',  source='*', dest='screensaver', before='push_current_state')
+        self.machine.add_transition('to_sleep',         source='*', dest='sleep', before='push_current_state')
         self.machine.add_transition('to_screensavermenu', source='*', dest='screensavermenu', before='push_current_state')
         self.machine.add_transition('to_displaymenu',  source='*', dest='displaymenu', before='push_current_state')
         self.machine.add_transition('to_clockmenu',    source='*', dest='clockmenu', before='push_current_state')
@@ -447,6 +479,7 @@ class ModeManager:
 
     def stop_all_screens(self):
         self.logger.debug("ModeManager: stop_all_screens called.")
+        self._cancel_sleep_timer()
         if self.clock:
             self.clock.stop()
         if self.screensaver:
@@ -609,8 +642,30 @@ class ModeManager:
             screen.start_screensaver()
         else:
             self.logger.warning("ModeManager: No screensaver available.")
+        # Arm the deep-sleep timer: if still on the screensaver when it fires,
+        # the OLED panel powers off until play/input. No-op if disabled (0).
+        self._start_sleep_timer()
         self.update_current_mode()
         self.cancel_menu_inactivity_timer()
+
+    def enter_sleep(self, event):
+        self.logger.info("ModeManager: Entering 'sleep' state (OLED off).")
+        self.stop_all_screens()
+        if self.display_manager:
+            self.display_manager.sleep()
+        self.update_current_mode()
+        self.cancel_menu_inactivity_timer()
+
+    def exit_sleep(self, event):
+        # on_exit of 'sleep' — power the panel on BEFORE the next screen draws,
+        # so whatever we transition to (clock/playback) is visible immediately.
+        self.logger.info("ModeManager: Exiting 'sleep' state (OLED on).")
+        if self.display_manager:
+            self.display_manager.wake()
+
+    def wake_from_sleep(self):
+        """Wake from deep sleep on user input (button/rotary) → back to clock."""
+        self.to_clock()
 
     def enter_screensavermenu(self, event):
         self.logger.info("ModeManager: Entering 'screensavermenu' state.")
