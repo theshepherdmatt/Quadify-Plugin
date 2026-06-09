@@ -130,11 +130,16 @@ class ButtonsLEDController:
             # Pull-ups on B2..B7
             self.bus.write_byte_data(self.mcp23017_address, MCP23017_GPPUB, 0xFC)
 
-            # Clear all LEDs
-            self.bus.write_byte_data(self.mcp23017_address, MCP23017_GPIOA, 0x00)
+            # Keep the boot indicator (LED2 = PAUSE) lit through init instead of
+            # clearing all LEDs. The unit is idle/paused until Volumio reports
+            # 'play', so the pause LED is the correct steady state — this hands
+            # the early-boot LED over seamlessly with no blink-off gap.
+            self.status_led_state = LED.PAUSE.value
+            self.current_led_state = LED.PAUSE.value
+            self.bus.write_byte_data(self.mcp23017_address, MCP23017_GPIOA, LED.PAUSE.value)
             # Columns high (inactive)
             self.bus.write_byte_data(self.mcp23017_address, MCP23017_GPIOB, 0x03)
-            self.logger.info("MCP23017 init complete.")
+            self.logger.info("MCP23017 init complete (LED2/PAUSE held on).")
         except Exception as e:
             self.logger.error(f"Init error: {e}")
 

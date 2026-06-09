@@ -8,9 +8,10 @@ Splits two concerns out of main.py:
   * BootCoordinator: shows splash, waits for first Volumio state OR timeout
     OR explicit skip. No fixed minimum loading time, no ready-loop, no
     manual interrupt.
-  * is_network_ready / is_clock_synced / wait_for_network_and_clock: small
-    helpers used between splash and clock so the clock isn't shown with a
-    wildly wrong time on a cold boot before NTP has converged.
+  * is_network_ready / is_clock_synced / wait_for_trustworthy_clock: small
+    helpers used between splash and clock so the clock is never shown with a
+    wrong time on a cold boot — the boot placeholder is held until NTP has
+    synced (or playback takes over).
 """
 
 import logging
@@ -19,6 +20,7 @@ import socket
 import subprocess
 import threading
 import time
+from datetime import datetime
 from typing import Callable, Optional
 
 
@@ -37,46 +39,76 @@ def is_network_ready() -> bool:
 
 
 def is_clock_synced() -> bool:
-    """True iff systemd-timesyncd reports the clock is NTP-synchronised."""
+    """True iff the system clock is trustworthy.
+
+    This Volumio image syncs time with ntpd (ntpsec), NOT systemd-timesyncd, and
+    on a no-RTC Pi the kernel `NTPSynchronized` flag is unreliable (it can read
+    'yes' before the clock has actually been corrected). So we ask ntpd directly:
+    `ntpq -c 'rv 0 leap'` reports `leap=00` only once ntpd has selected a peer
+    and disciplined the clock; before that it reports `leap=11` (alarm). A
+    year >= 2024 check stays as a backstop against a 1970/way-past boot.
+    """
+    # Backstop: a clock stuck in the past (RTC-less Pi pre-NTP) is never real.
+    if datetime.now().year < 2024:
+        return False
+    # Authoritative: ask ntpd whether it has actually synchronised.
+    try:
+        out = subprocess.run(
+            ["ntpq", "-c", "rv 0 leap"],
+            capture_output=True, text=True, timeout=2,
+        )
+        if "leap=00" in out.stdout:
+            return True
+        if "leap=" in out.stdout:          # leap=11/01/10 → not synced yet
+            return False
+    except Exception:
+        pass
+    # Fallback if ntpq is unavailable: kernel NTP flag (best-effort).
     try:
         out = subprocess.run(
             ["timedatectl", "show", "-p", "NTPSynchronized", "--value"],
             capture_output=True, text=True, timeout=2,
         )
-        if out.stdout.strip().lower() == "yes":
-            return True
+        return out.stdout.strip().lower() == "yes"
     except Exception:
-        pass
-    # Fallback: timesyncd writes this marker file when it first syncs.
-    return os.path.exists("/run/systemd/timesync/synchronized")
+        return False
 
 
-def wait_for_network_and_clock(timeout: float,
+def wait_for_trustworthy_clock(mode_manager,
                                poll_interval: float = 0.5,
-                               logger: Optional[logging.Logger] = None) -> bool:
-    """Block until network is up AND clock is NTP-synced, or `timeout` seconds pass.
+                               logger: Optional[logging.Logger] = None) -> str:
+    """Hold on the boot placeholder until it's safe to show the clock.
 
-    Returns True if both conditions were met before the deadline, False on timeout.
+    Returns when EITHER:
+      * the system clock becomes trustworthy   -> returns "synced"
+        (the caller may now enter the clock screen), OR
+      * something routes us off the 'boot' mode -> returns "left_boot"
+        (a play-state arrived and ModeManager switched to a playback screen;
+        the caller must NOT enter the clock).
+
+    By design there is NO timeout: an offline unit that never reaches NTP keeps
+    the placeholder (network.png) on screen indefinitely rather than show a
+    wrong time. It polls in short sleeps, so the socketio listener thread — and
+    any playback screen it starts via process_state_change — keep running
+    unhindered while we wait.
     """
     log = logger or logging.getLogger("BootReady")
-    deadline = time.time() + max(timeout, 0.0)
+    log.info("Holding boot placeholder until the system clock is trustworthy…")
     saw_net = False
-    saw_clk = False
-    while time.time() < deadline:
+    while True:
+        # Playback precedence: ModeManager auto-routes a play-state off 'boot'
+        # on the socketio thread. If that happened, leave the clock alone —
+        # playback now owns the screen and doesn't depend on the time.
+        if mode_manager.get_mode() != "boot":
+            log.info("Routed off boot during clock wait (playback took over); not showing clock.")
+            return "left_boot"
         if not saw_net and is_network_ready():
             saw_net = True
-            log.info("Network ready (default route present).")
-        if not saw_clk and is_clock_synced():
-            saw_clk = True
-            log.info("System clock synchronised via NTP.")
-        if saw_net and saw_clk:
-            return True
+            log.info("Network ready (default route present); waiting for NTP sync…")
+        if is_clock_synced():
+            log.info("System clock trustworthy; entering clock.")
+            return "synced"
         time.sleep(poll_interval)
-    log.warning(
-        "Boot readiness timed out after %.1fs (network=%s, clock=%s).",
-        timeout, saw_net, saw_clk,
-    )
-    return False
 
 
 _STREAMING_MODES = (
