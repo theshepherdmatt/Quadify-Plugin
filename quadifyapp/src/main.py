@@ -298,6 +298,13 @@ def main():
                 fn()
             except Exception as e:
                 log.warning("Error stopping %s: %s", name, e)
+        # Hardware is released above. Some background threads (the socket.io
+        # client in particular) are non-daemon and can block interpreter exit
+        # for systemd's full stop timeout (~90s of blank OLED before SIGKILL).
+        # Exit hard now so stop/restart is immediate.
+        log.info("Quadify shutdown complete; exiting.")
+        sys.stdout.flush()
+        os._exit(0)
 
 
 if __name__ == "__main__":
