@@ -529,6 +529,15 @@ if [ -f "$PLUGIN_DIR/quadifyapp/scripts/early_led8.py" ]; then
     "/usr/bin/python3 $PLUGIN_DIR/quadifyapp/scripts/early_led8.py"
 fi
 
+# quadify-timesync.service (if script exists) — fast one-shot SNTP clock step
+if [ -f "$PLUGIN_DIR/quadifyapp/scripts/early_timesync.py" ]; then
+  install_unit_from_template_or_simple \
+    "quadify-timesync.service" \
+    "Quadify early one-shot time sync" \
+    "quadifyapp/scripts" \
+    "/usr/bin/python3 $PLUGIN_DIR/quadifyapp/scripts/early_timesync.py"
+fi
+
 # cava.service — install unconditionally (local-build path)
 install_unit_from_template_or_simple \
   "cava.service" \
@@ -547,6 +556,7 @@ run systemctl disable --now quadify-buttonsleds.service || true
 systemctl disable --now buttonsleds.service >/dev/null 2>&1 || true
 
 [ -f /etc/systemd/system/early_led8.service ] && run systemctl enable early_led8.service || true
+[ -f /etc/systemd/system/quadify-timesync.service ] && run systemctl enable quadify-timesync.service || true
 
 write_sudoers
 

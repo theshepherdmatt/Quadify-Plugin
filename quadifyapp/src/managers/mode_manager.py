@@ -112,8 +112,6 @@ class ModeManager:
         self.idle_timeout = self.config.get("screensaver_timeout", 60)
 
         self.suppress_state_changes = False
-        self.is_track_changing = False
-        self.track_change_in_progress = False
         self.current_status = None
         self.previous_status = None
         self.pause_stop_timer = None
@@ -148,13 +146,17 @@ class ModeManager:
 
         self.icon_provider = IconProvider()
 
+        # Create the lock BEFORE wiring the state_changed signal: a pushState
+        # arriving in the window between connect() and lock creation would reach
+        # process_state_change (which does `with self.lock`) before the attribute
+        # exists, raising AttributeError.
+        self.lock = threading.Lock()
+
         if self.volumio_listener is not None:
             self.volumio_listener.state_changed.connect(self.process_state_change)
             self.logger.debug("ModeManager: Connected to volumio_listener.state_changed signal.")
         else:
             self.logger.warning("ModeManager: volumio_listener is None, no state_changed signal linked.")
-
-        self.lock = threading.Lock()
         
         self.menu_inactivity_timer = None
         self.menu_inactivity_timeout = 15  # seconds; change as needed
@@ -861,8 +863,6 @@ class ModeManager:
 
 
     def _handle_track_change(self):
-        self.is_track_changing = True
-        self.track_change_in_progress = True
         # Reuse _start_pause_timer so _pause_pending and _last_pause_time are
         # set the same way as on a pause event. Without this, the timer fired
         # 5s after a webradio stop with _pause_pending=False and decided "no
@@ -1033,8 +1033,5 @@ class ModeManager:
         else:
             # Fallback: always go to menu
             self.to_menu()
-
-    def get_mode(self):
-        return self.state
         
         

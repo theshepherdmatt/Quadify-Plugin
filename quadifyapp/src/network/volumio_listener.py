@@ -17,13 +17,16 @@ class VolumioListener:
         """
         self.logger = logging.getLogger("VolumioListener")
 
-        self.logger.setLevel(logging.DEBUG)  # Set to DEBUG for detailed logs
+        self.logger.setLevel(logging.INFO)  # DEBUG floods the journal with full state/sources dumps
         self.logger.debug("[VolumioListener] Initializing...")
 
         self.host = host
         self.port = port
         self.reconnect_delay = reconnect_delay
-        self.socketIO = socketio.Client(logger=False, engineio_logger=False, reconnection=True)
+        # reconnection=False: we run our own reconnect (schedule_reconnect) with a
+        # boot-fast-retry backoff. Leaving the library's reconnect on too means two
+        # engines race on a dropped connection. Our manual path is the single source.
+        self.socketIO = socketio.Client(logger=False, engineio_logger=False, reconnection=False)
 
         # Define Blinker signals
         self.connected = Signal('connected')
@@ -174,19 +177,31 @@ class VolumioListener:
         self.logger.info("[VolumioListener] Received pushBrowseSources event.")
         # Optionally: log the new sources for debug
         self.logger.debug(f"[VolumioListener] Sources: {data}")
-        # Now trigger your menu to refresh.
-        # This could be via a direct reference, signal, or callback—see below!
+        # Keep the home-menu data current so it's right when the user opens it,
+        # but only repaint the OLED if the menu is actually on screen. Volumio
+        # fires pushBrowseSources unsolicited (at boot, and whenever sources
+        # change); painting unconditionally drew the icon menu over whatever was
+        # showing — the clock or a playback screen — for a frame, which is the
+        # brief clock->menu->clock flash. Refresh always; draw only in "menu".
         if hasattr(self, "menu_manager"):
             self.menu_manager.refresh_main_menu()
-            self.menu_manager.display_menu()
-        else:
-            # Or use a signal if you wire it that way
-            if hasattr(self, "sources_changed"):
-                self.sources_changed.send(self, sources=data)
+            mode_manager = getattr(self, "mode_manager", None)
+            if mode_manager is not None and mode_manager.get_mode() == "menu":
+                self.menu_manager.display_menu()
 
     def schedule_reconnect(self):
-        """Schedule a reconnection attempt."""
-        delay = min(self.reconnect_delay * self._reconnect_attempt, 60)
+        """Schedule a reconnection attempt.
+
+        At boot Volumio's API server comes up several seconds after our
+        process, so the first connects always fail with 'connection refused'.
+        Retry fast (1s) for the first ~10 attempts so we latch on the instant
+        it's ready, then fall back to the growing backoff so a genuinely-down
+        server isn't hammered.
+        """
+        if self._reconnect_attempt <= 10:
+            delay = 1
+        else:
+            delay = min(self.reconnect_delay * (self._reconnect_attempt - 10), 60)
         self.logger.info(f"[VolumioListener] Reconnecting in {delay} seconds...")
         threading.Thread(target=self._reconnect_after_delay, args=(delay,), daemon=True).start()
 
@@ -198,22 +213,14 @@ class VolumioListener:
             self.connect()
 
     def on_push_state(self, data):
-        self.logger.info("[VolumioListener] Received pushState event.")
+        # DEBUG, not INFO: Volumio emits pushState roughly every second while
+        # playing (seek progress), which floods the journal at INFO.
+        self.logger.debug("[VolumioListener] Received pushState event.")
         with self.state_lock:
             self.current_state = data  # Store the current state
             if "volume" in data:
                 self.current_volume = data["volume"]
         self.state_changed.send(self, state=data)
-
-    def extract_streaming_services(self, navigation):
-        STREAMING_SERVICES = {"tidal", "qobuz", "spotify"}
-        found = []
-        lists = navigation.get("lists", [])
-        for item in lists:
-            name = item.get("plugin_name", "").lower()
-            if name in STREAMING_SERVICES:
-                found.append(name)
-        return found
 
     def on_push_browse_library(self, data):
         self.logger.info("[VolumioListener] Received pushBrowseLibrary event.")

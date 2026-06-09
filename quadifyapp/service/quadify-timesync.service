@@ -1,0 +1,22 @@
+[Unit]
+Description=Quadify early one-shot time sync (fast clock readiness)
+# Get a correct wall-clock time on the OLED within seconds of the network
+# coming up, instead of waiting ~5 min for ntpd to formally declare sync
+# (leap=00). ntpd remains the long-term time source; this just steps the clock
+# once and drops /run/quadify-timesynced for the boot->clock gate to trust.
+# Deliberately NOT ordered Before=quadify.service: a unit with no internet must
+# never delay the app -- the boot placeholder holds and ntpd is the backstop.
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/bin/python3 /data/plugins/system_hardware/quadify/quadifyapp/scripts/early_timesync.py
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=75
+
+[Install]
+WantedBy=multi-user.target
