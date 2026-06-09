@@ -47,10 +47,24 @@ def is_clock_synced() -> bool:
     `ntpq -c 'rv 0 leap'` reports `leap=00` only once ntpd has selected a peer
     and disciplined the clock; before that it reports `leap=11` (alarm). A
     year >= 2024 check stays as a backstop against a 1970/way-past boot.
+
+    Fast path: ntpd is conservative and can take ~5 min to declare leap=00,
+    which left the "Connecting to network" placeholder on screen far too long.
+    quadify-timesync.service does a one-shot SNTP step early in boot and drops a
+    marker once the clock is verified against a real network source; we trust
+    that immediately rather than wait for ntpd's slow formal sync.
     """
     # Backstop: a clock stuck in the past (RTC-less Pi pre-NTP) is never real.
     if datetime.now().year < 2024:
         return False
+    # Fast path: our one-shot SNTP step verified real time this boot. The marker
+    # lives in /run (tmpfs) so it's cleared every boot and only exists after a
+    # confirmed sync — trust it without waiting for ntpd's slow leap=00.
+    try:
+        if os.path.exists("/run/quadify-timesynced"):
+            return True
+    except Exception:
+        pass
     # Authoritative: ask ntpd whether it has actually synchronised.
     try:
         out = subprocess.run(
